@@ -1,247 +1,266 @@
-package com.exemplo.meuapp
+package com.example.forge_burger
 
+// ╔══════════════════════════════════════════════╗
+// ║  MenuScreen.kt                               ║
+// ║  ABA INÍCIO: cardápio (lista de Produtos)    ║
+// ║  Clique → detalhes · Segurar → remover       ║
+// ╚══════════════════════════════════════════════╝
+
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.foundation.verticalScroll
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Star
+import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
+import androidx.navigation.NavHostController
+import androidx.navigation.compose.rememberNavController
+import com.example.forge_burger.ui.theme.CorCard
+import com.example.forge_burger.ui.theme.CorFundo
+import com.example.forge_burger.ui.theme.CorLaranja
+import com.example.forge_burger.ui.theme.CorTextoCinza
+import com.example.forge_burger.ui.theme.ForgeBurgerTheme
+import com.example.forge_burger.ui.theme.formatarPreco
 
-@Preview(showBackground = true, heightDp = 800)
 @Composable
-fun MenuScreen() {
-    val corFundo = Color(18, 18, 18)
-    val corCard = Color(28, 28, 28)
-    val corLaranja = Color(255, 160, 0)
-    val corTextoCinza = Color(160, 160, 160)
+fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
+    // null = "Todos"
+    var categoriaSelecionada by remember { mutableStateOf<Int?>(null) }
+    var ordenarPorPreco by remember { mutableStateOf(false) }
+    var produtoParaRemover by remember { mutableStateOf<Produto?>(null) }
 
-    var categoriaSelecionada by remember { mutableStateOf("Hambúrgueres") }
+    // Se a categoria escolhida foi apagada, volta para "Todos"
+    val categoriaAtual = categoriaSelecionada?.let { viewModel.buscarCategoria(it) }
 
-    Column(
+    val produtosFiltrados = viewModel.produtos
+        .filter { categoriaAtual == null || it.categoriaId == categoriaAtual.id }
+        .let { lista -> if (ordenarPorPreco) lista.sortedBy { it.preco } else lista }
+
+    Box(
         modifier = Modifier
             .fillMaxSize()
-            .background(corFundo)
+            .background(CorFundo)
+    ) {
+        LazyColumn(
+            modifier = Modifier.fillMaxSize(),
+            contentPadding = PaddingValues(start = 16.dp, end = 16.dp, bottom = 88.dp)
+        ) {
+            item {
+                CabecalhoMarca(
+                    onMenu = { navController.navigate(Rotas.CATEGORIAS) },
+                    onPerfil = { navController.irParaAba(Rotas.PERFIL) }
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                BarraBuscaFalsa(onClick = { navController.irParaAba(Rotas.BUSCA) })
+                Spacer(modifier = Modifier.height(16.dp))
+
+                // Chips de categoria (vêm da lista de Categorias)
+                Row(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .horizontalScroll(rememberScrollState())
+                ) {
+                    ChipCategoria("Todos", categoriaAtual == null) { categoriaSelecionada = null }
+                    viewModel.categorias.forEach { categoria ->
+                        ChipCategoria(categoria.nome, categoriaAtual?.id == categoria.id) {
+                            categoriaSelecionada = categoria.id
+                        }
+                    }
+                    ChipCategoria("+ Gerenciar", false) { navController.navigate(Rotas.CATEGORIAS) }
+                }
+
+                Spacer(modifier = Modifier.height(20.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    TituloSecao(
+                        texto = categoriaAtual?.nome ?: "Lanches Artesanais",
+                        modifier = Modifier.weight(1f)
+                    )
+                    Text(
+                        text = if (ordenarPorPreco) "Preço ↑" else "Ordenar",
+                        color = if (ordenarPorPreco) CorLaranja else CorTextoCinza,
+                        fontSize = 13.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier
+                            .clickable { ordenarPorPreco = !ordenarPorPreco }
+                            .padding(8.dp)
+                    )
+                }
+                Text(
+                    text = "Toque para personalizar • segure para remover",
+                    color = CorTextoCinza,
+                    fontSize = 12.sp
+                )
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+
+            if (produtosFiltrados.isEmpty()) {
+                item {
+                    EstadoVazio("🍽️", "Nenhum produto aqui", "Toque em \"Novo lanche\" para cadastrar.")
+                }
+            }
+
+            // Grade de 2 colunas: cada linha da LazyColumn tem 2 cards
+            items(produtosFiltrados.chunked(2)) { linha ->
+                Row(modifier = Modifier.fillMaxWidth()) {
+                    linha.forEachIndexed { indice, produto ->
+                        if (indice == 1) Spacer(modifier = Modifier.width(12.dp))
+                        CardMenuBurger(
+                            produto = produto,
+                            onClick = { navController.navigate(Rotas.produto(produto.id)) },
+                            onLongClick = { produtoParaRemover = produto },
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                    if (linha.size == 1) {
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Spacer(modifier = Modifier.weight(1f))
+                    }
+                }
+                Spacer(modifier = Modifier.height(12.dp))
+            }
+        }
+
+        ExtendedFloatingActionButton(
+            onClick = { navController.navigate(Rotas.novoProduto(categoriaAtual?.id)) },
+            containerColor = CorLaranja,
+            contentColor = Color.Black,
+            icon = { Icon(Icons.Default.Add, contentDescription = null) },
+            text = { Text("Novo lanche", fontWeight = FontWeight.Bold) },
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(16.dp)
+        )
+    }
+
+    // Confirmação antes de remover
+    produtoParaRemover?.let { produto ->
+        AlertDialog(
+            onDismissRequest = { produtoParaRemover = null },
+            title = { Text("Remover produto?") },
+            text = { Text("\"${produto.nome}\" será removido do cardápio.") },
+            confirmButton = {
+                TextButton(onClick = {
+                    viewModel.removerProduto(produto)
+                    produtoParaRemover = null
+                }) { Text("Remover", color = CorLaranja) }
+            },
+            dismissButton = {
+                TextButton(onClick = { produtoParaRemover = null }) { Text("Cancelar", color = CorTextoCinza) }
+            },
+            containerColor = CorCard
+        )
+    }
+}
+
+@Composable
+private fun BarraBuscaFalsa(onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        modifier = Modifier
+            .fillMaxWidth()
+            .height(48.dp),
+        shape = RoundedCornerShape(24.dp),
+        color = CorCard
     ) {
         Row(
             modifier = Modifier
-                .fillMaxWidth()
-                .padding(horizontal = 16.dp, vertical = 12.dp),
-            horizontalArrangement = Arrangement.SpaceBetween,
+                .fillMaxSize()
+                .padding(horizontal = 16.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            Text(text = "☰", color = Color.White, fontSize = 22.sp)
+            Icon(Icons.Default.Search, contentDescription = null, tint = CorTextoCinza)
+            Spacer(modifier = Modifier.width(8.dp))
             Text(
-                text = "BURGERCRAFT",
-                color = corLaranja,
-                fontSize = 20.sp,
-                fontWeight = FontWeight.Bold
+                text = "Buscar lanches, bebidas, porções...",
+                color = CorTextoCinza,
+                fontSize = 14.sp
             )
-            Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "🔔", fontSize = 18.sp, modifier = Modifier.padding(end = 10.dp))
-                Surface(
-                    modifier = Modifier.size(34.dp),
-                    shape = RoundedCornerShape(50),
-                    color = Color(80, 60, 50)
-                ) {
-                    Box(contentAlignment = Alignment.Center) {
-                        Text(text = "👤", fontSize = 16.sp)
-                    }
-                }
-            }
-        }
-
-        Column(
-            modifier = Modifier
-                .weight(1f)
-                .verticalScroll(rememberScrollState())
-                .padding(horizontal = 16.dp)
-        ) {
-            Spacer(modifier = Modifier.height(8.dp))
-
-            Surface(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .height(48.dp),
-                shape = RoundedCornerShape(24.dp),
-                color = corCard
-            ) {
-                Row(
-                    modifier = Modifier
-                        .fillMaxSize()
-                        .padding(horizontal = 16.dp),
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Text(text = "🔍", fontSize = 16.sp)
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        text = "Buscar lanches, bebidas, porções...",
-                        color = corTextoCinza,
-                        fontSize = 14.sp,
-                        modifier = Modifier.weight(1f)
-                    )
-                    Text(text = "🎙️", fontSize = 16.sp)
-                }
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
-            ) {
-                val categorias = listOf("Hambúrgueres", "Bebidas", "Combos", "Acompanhamentos")
-                categorias.forEach { nome ->
-                    val ativo = (nome == categoriaSelecionada)
-                    Surface(
-                        onClick = { categoriaSelecionada = nome },
-                        shape = RoundedCornerShape(20.dp),
-                        color = if (ativo) corLaranja else corCard,
-                        modifier = Modifier.padding(end = 8.dp)
-                    ) {
-                        Text(
-                            text = nome,
-                            color = if (ativo) Color.Black else corTextoCinza,
-                            fontWeight = FontWeight.Bold,
-                            fontSize = 13.sp,
-                            modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Lanches Artesanais",
-                    color = Color.White,
-                    fontSize = 18.sp,
-                    fontWeight = FontWeight.Bold
-                )
-                Text(text = "🎚️", fontSize = 18.sp)
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            // Linha 1
-            Row(modifier = Modifier.fillMaxWidth()) {
-                CardMenuBurger(
-                    foto = "🍔",
-                    nome = "Smash Triplo Bacon",
-                    nota = "4.9",
-                    preco = 12.90f,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                CardMenuBurger(
-                    foto = "🍔",
-                    nome = "Smash Jalapeño",
-                    nota = "4.7",
-                    preco = 11.50f,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(12.dp))
-
-            Row(modifier = Modifier.fillMaxWidth()) {
-                CardMenuBurger(
-                    foto = "🍔",
-                    nome = "Cogumelo Trufado",
-                    nota = "4.8",
-                    preco = 13.50f,
-                    modifier = Modifier.weight(1f)
-                )
-                Spacer(modifier = Modifier.width(12.dp))
-                CardMenuBurger(
-                    foto = "🍔",
-                    nome = "Smash Clássico",
-                    nota = "4.6",
-                    preco = 9.90f,
-                    modifier = Modifier.weight(1f)
-                )
-            }
-
-            Spacer(modifier = Modifier.height(16.dp))
-        }
-
-        Surface(
-            modifier = Modifier.fillMaxWidth(),
-            color = corCard
-        ) {
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .padding(vertical = 10.dp),
-                horizontalArrangement = Arrangement.SpaceAround,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                ItemBarraNavegacao(icone = "🏠", label = "Início", selecionado = true)
-                ItemBarraNavegacao(icone = "🔍", label = "Buscar", selecionado = false)
-                ItemBarraNavegacao(icone = "🛍️", label = "Carrinho", selecionado = false)
-                ItemBarraNavegacao(icone = "👤", label = "Perfil", selecionado = false)
-            }
         }
     }
 }
 
 @Composable
+private fun ChipCategoria(nome: String, ativo: Boolean, onClick: () -> Unit) {
+    Surface(
+        onClick = onClick,
+        shape = RoundedCornerShape(20.dp),
+        color = if (ativo) CorLaranja else CorCard,
+        modifier = Modifier.padding(end = 8.dp)
+    ) {
+        Text(
+            text = nome,
+            color = if (ativo) Color.Black else CorTextoCinza,
+            fontWeight = FontWeight.Bold,
+            fontSize = 13.sp,
+            modifier = Modifier.padding(horizontal = 18.dp, vertical = 8.dp)
+        )
+    }
+}
+
+@OptIn(ExperimentalFoundationApi::class)
+@Composable
 fun CardMenuBurger(
-    foto: String,
-    nome: String,
-    nota: String,
-    preco: Float,
+    produto: Produto,
+    onClick: () -> Unit,
+    onLongClick: () -> Unit,
     modifier: Modifier = Modifier
 ) {
-    Surface(
-        shape = RoundedCornerShape(16.dp),
-        color = Color(28, 28, 28),
-        modifier = modifier
+    CardEscuro(
+        modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
-            Surface(
-                shape = RoundedCornerShape(12.dp),
-                color = Color(45, 45, 45),
+            FotoProduto(
+                emoji = produto.emoji,
+                tamanhoEmoji = 48,
                 modifier = Modifier
                     .fillMaxWidth()
                     .height(110.dp)
-            ) {
-                Box(contentAlignment = Alignment.Center) {
-                    Text(text = foto, fontSize = 48.sp)
-                }
-            }
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
             Text(
-                text = nome,
+                text = produto.nome,
                 color = Color.White,
                 fontSize = 14.sp,
                 fontWeight = FontWeight.Bold,
-                maxLines = 1
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis
             )
 
             Spacer(modifier = Modifier.height(4.dp))
 
             Row(verticalAlignment = Alignment.CenterVertically) {
-                Text(text = "⭐", fontSize = 12.sp)
+                Icon(Icons.Default.Star, contentDescription = null, tint = CorLaranja, modifier = Modifier.size(14.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(text = nota, color = Color(160, 160, 160), fontSize = 12.sp)
+                Text(text = "%.1f".format(produto.nota), color = CorTextoCinza, fontSize = 12.sp)
             }
 
             Spacer(modifier = Modifier.height(8.dp))
@@ -252,14 +271,15 @@ fun CardMenuBurger(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = "R$ " + "%.2f".format(preco),
-                    color = Color(255, 160, 0),
+                    text = formatarPreco(produto.preco),
+                    color = CorLaranja,
                     fontSize = 15.sp,
                     fontWeight = FontWeight.Bold
                 )
                 Surface(
+                    onClick = onClick,
                     shape = RoundedCornerShape(50),
-                    color = Color(255, 160, 0),
+                    color = CorLaranja,
                     modifier = Modifier.size(28.dp)
                 ) {
                     Box(contentAlignment = Alignment.Center) {
@@ -271,14 +291,10 @@ fun CardMenuBurger(
     }
 }
 
+@Preview(showBackground = true, heightDp = 800)
 @Composable
-fun ItemBarraNavegacao(icone: String, label: String, selecionado: Boolean) {
-    Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(text = icone, fontSize = 18.sp)
-        Text(
-            text = label,
-            fontSize = 11.sp,
-            color = if (selecionado) Color(255, 160, 0) else Color(160, 160, 160)
-        )
+fun MenuScreenPreview() {
+    ForgeBurgerTheme {
+        MenuScreen(rememberNavController(), viewModel())
     }
 }
