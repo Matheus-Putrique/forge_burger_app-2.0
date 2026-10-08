@@ -1,5 +1,7 @@
 # 🍔 BurgerCraft — Forge Burger App
 
+> Trabalho de Desenvolvimento de Aplicativos Móveis
+
 Aplicativo Android nativo em **Kotlin + Jetpack Compose (Material 3)** para pedidos em uma hamburgueria artesanal.
 
 ## ▶️ Como rodar
