@@ -15,12 +15,12 @@ import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.FavoriteBorder
 import androidx.compose.material3.Checkbox
 import androidx.compose.material3.CheckboxDefaults
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
@@ -75,6 +75,20 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
             .background(CorFundo)
             .imePadding()
     ) {
+        BarraTopo(
+            titulo = "Detalhes do produto",
+            onVoltar = { navController.popBackStack() },
+            acoes = {
+                IconButton(onClick = { viewModel.alternarFavorito(produto.id) }) {
+                    Icon(
+                        imageVector = if (viewModel.ehFavorito(produto.id)) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        contentDescription = "Favoritar",
+                        tint = CorLaranja
+                    )
+                }
+            }
+        )
+
         Column(
             modifier = Modifier
                 .weight(1f)
@@ -83,37 +97,11 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
             Box(
                 modifier = Modifier
                     .fillMaxWidth()
-                    .height(280.dp)
-                    .background(Color(40, 30, 25))
+                    .height(240.dp)
+                    .background(Color(40, 30, 25)),
+                contentAlignment = Alignment.Center
             ) {
-                Box(
-                    modifier = Modifier.fillMaxSize(),
-                    contentAlignment = Alignment.Center
-                ) {
-                    Text(text = produto.emoji, fontSize = 110.sp)
-                }
-
-                BotaoRedondo(
-                    onClick = { navController.popBackStack() },
-                    modifier = Modifier
-                        .padding(start = 16.dp, top = 16.dp)
-                        .align(Alignment.TopStart)
-                ) {
-                    Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Voltar", tint = Color.White)
-                }
-
-                BotaoRedondo(
-                    onClick = { viewModel.alternarFavorito(produto.id) },
-                    modifier = Modifier
-                        .padding(end = 16.dp, top = 16.dp)
-                        .align(Alignment.TopEnd)
-                ) {
-                    Icon(
-                        imageVector = if (viewModel.ehFavorito(produto.id)) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
-                        contentDescription = "Favoritar",
-                        tint = CorLaranja
-                    )
-                }
+                Text(text = produto.emoji, fontSize = 110.sp)
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
@@ -285,18 +273,6 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                 )
             }
         }
-    }
-}
-
-@Composable
-private fun BotaoRedondo(onClick: () -> Unit, modifier: Modifier = Modifier, conteudo: @Composable () -> Unit) {
-    Surface(
-        onClick = onClick,
-        shape = RoundedCornerShape(50),
-        color = Color(0, 0, 0, 120),
-        modifier = modifier.size(40.dp)
-    ) {
-        Box(contentAlignment = Alignment.Center) { conteudo() }
     }
 }
 

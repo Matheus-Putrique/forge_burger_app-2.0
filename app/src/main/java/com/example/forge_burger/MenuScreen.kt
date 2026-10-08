@@ -18,11 +18,13 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
@@ -113,7 +115,7 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                 }
                 Text(
-                    text = "Toque para personalizar • segure para remover",
+                    text = "Toque para personalizar • 🗑 ou segure para remover",
                     color = CorTextoCinza,
                     fontSize = 12.sp
                 )
@@ -260,7 +262,21 @@ fun CardMenuBurger(
             Row(verticalAlignment = Alignment.CenterVertically) {
                 Icon(Icons.Default.Star, contentDescription = null, tint = CorLaranja, modifier = Modifier.size(14.dp))
                 Spacer(modifier = Modifier.width(4.dp))
-                Text(text = "%.1f".format(produto.nota), color = CorTextoCinza, fontSize = 12.sp)
+                Text(
+                    text = "%.1f".format(produto.nota),
+                    color = CorTextoCinza,
+                    fontSize = 12.sp,
+                    modifier = Modifier.weight(1f)
+                )
+                // Lixeira: remove o produto da lista (pede confirmação)
+                IconButton(onClick = onLongClick, modifier = Modifier.size(28.dp)) {
+                    Icon(
+                        Icons.Default.Delete,
+                        contentDescription = "Remover",
+                        tint = CorTextoCinza,
+                        modifier = Modifier.size(18.dp)
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.height(8.dp))
