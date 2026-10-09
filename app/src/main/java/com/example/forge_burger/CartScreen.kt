@@ -22,6 +22,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +45,7 @@ private val formasPagamento = listOf("Pix", "Cartão na entrega", "Dinheiro")
 
 @Composable
 fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
-    var pagamento by remember { mutableStateOf(formasPagamento[0]) }
+    var pagamento by rememberSaveable { mutableStateOf(formasPagamento[0]) }
 
     val subtotal = viewModel.subtotalCarrinho()
     val totalGeral = subtotal + viewModel.taxaEntrega
@@ -184,7 +185,7 @@ fun CardItemDoPedido(
             modifier = Modifier.padding(12.dp),
             verticalAlignment = Alignment.CenterVertically
         ) {
-            FotoProduto(emoji = item.produto.emoji, modifier = Modifier.size(54.dp))
+            FotoProduto(emoji = item.produto.emoji, foto = item.produto.foto, modifier = Modifier.size(54.dp))
 
             Spacer(modifier = Modifier.width(12.dp))
 

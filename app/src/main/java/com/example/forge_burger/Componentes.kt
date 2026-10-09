@@ -5,6 +5,8 @@ package com.example.forge_burger
 // ║  Pedaços de tela reaproveitados              ║
 // ╚══════════════════════════════════════════════╝
 
+import androidx.annotation.DrawableRes
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.PaddingValues
@@ -36,6 +38,8 @@ import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -102,16 +106,30 @@ fun CabecalhoMarca(onMenu: () -> Unit, onPerfil: () -> Unit, modifier: Modifier 
     }
 }
 
-// "Foto" do produto (emoji num quadrado escuro)
+// Foto do produto: imagem quando houver, senão o emoji num quadrado escuro
 @Composable
-fun FotoProduto(emoji: String, modifier: Modifier = Modifier, tamanhoEmoji: Int = 28) {
+fun FotoProduto(
+    emoji: String,
+    modifier: Modifier = Modifier,
+    tamanhoEmoji: Int = 28,
+    @DrawableRes foto: Int? = null
+) {
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = CorCardClaro,
         modifier = modifier
     ) {
-        Box(contentAlignment = Alignment.Center) {
-            Text(text = emoji, fontSize = tamanhoEmoji.sp)
+        if (foto != null) {
+            Image(
+                painter = painterResource(foto),
+                contentDescription = null,
+                contentScale = ContentScale.Crop,
+                modifier = Modifier.fillMaxSize()
+            )
+        } else {
+            Box(contentAlignment = Alignment.Center) {
+                Text(text = emoji, fontSize = tamanhoEmoji.sp)
+            }
         }
     }
 }

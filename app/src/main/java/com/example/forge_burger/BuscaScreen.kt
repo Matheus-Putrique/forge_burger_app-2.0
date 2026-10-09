@@ -18,6 +18,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -37,7 +38,7 @@ import com.example.forge_burger.ui.theme.formatarPreco
 
 @Composable
 fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
-    var texto by remember { mutableStateOf("") }
+    var texto by rememberSaveable { mutableStateOf("") }
 
     val resultados = viewModel.produtos.filter {
         it.nome.contains(texto.trim(), ignoreCase = true) ||
@@ -112,7 +113,7 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                             .clickable { navController.navigate(Rotas.produto(produto.id)) }
                     ) {
                         Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                            FotoProduto(produto.emoji, modifier = Modifier.size(54.dp))
+                            FotoProduto(produto.emoji, foto = produto.foto, modifier = Modifier.size(54.dp))
                             Spacer(Modifier.width(12.dp))
                             Column(Modifier.weight(1f)) {
                                 Text(produto.nome, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)

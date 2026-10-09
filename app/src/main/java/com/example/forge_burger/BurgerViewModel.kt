@@ -37,40 +37,58 @@ class BurgerViewModel : ViewModel() {
     // ---------- Lista 2: Produtos ----------
     val produtos = mutableStateListOf(
         Produto(
-            1, "Smash Triplo Bacon",
-            "Três carnes smash de 90g, cheddar triplo e muito bacon crocante.",
-            12.90, 1, "🍔", 4.9,
-            listOf("3x Carnes Smash (90g cada)", "Cheddar Triplo", "Bacon Crocante", "Pão Brioche Selado")
+            1, "Classic Bacon Burger",
+            "Burger grelhado, cheddar derretido, bacon, alface, tomate, cebola roxa e molho especial no pão com gergelim.",
+            32.90, 1, "🍔", 4.8,
+            listOf("Burger Grelhado (180g)", "Queijo Cheddar", "Bacon", "Alface, Tomate e Cebola Roxa", "Molho Especial", "Pão com Gergelim"),
+            foto = R.drawable.foto_classic_bacon
         ),
         Produto(
-            2, "Smash Jalapeño",
-            "Carne smash, pepper jack, jalapeños frescos e maionese picante.",
-            11.50, 1, "🌶️", 4.7,
-            listOf("2x Carnes Smash (90g cada)", "Queijo Pepper Jack", "Jalapeños", "Maionese Picante")
+            2, "Jalapeño Brioche",
+            "Burger suculento, queijo branco derretido, bacon crocante, relish de jalapeño, cebola roxa grelhada, tomate e rúcula no brioche tostado.",
+            36.90, 1, "🌶️", 4.7,
+            listOf("Burger Grelhado (180g)", "Queijo Branco Derretido", "Bacon Crocante", "Relish de Jalapeño", "Cebola Roxa Grelhada", "Tomate e Rúcula", "Maionese da Casa", "Pão Brioche"),
+            foto = R.drawable.foto_jalapeno_brioche
         ),
         Produto(
-            3, "Cogumelo Trufado",
-            "Carne smash, cogumelos salteados, queijo suíço e maionese de trufas.",
-            13.50, 1, "🍄", 4.8,
-            listOf("2x Carnes Smash (90g cada)", "Cogumelos Salteados", "Queijo Suíço", "Maionese Trufada")
+            3, "Black Sesame Gourmet",
+            "Burger, cheddar e queijo prato, bacon, cebola caramelizada, tomate-cereja, rúcula e espinafre no pão com gergelim preto.",
+            38.90, 1, "🧅", 4.9,
+            listOf("Burger Grelhado (180g)", "Cheddar e Queijo Prato", "Bacon", "Cebola Caramelizada", "Tomate-Cereja", "Rúcula e Espinafre", "Molho Barbecue", "Pão com Gergelim Preto"),
+            foto = R.drawable.foto_black_sesame
         ),
         Produto(
-            4, "Smash Clássico",
-            "Dois hambúrgueres artesanais smash de 90g, queijo cheddar duplo derretido, molho secreto artesanal e picles da casa no pão brioche tostado na manteiga.",
-            14.90, 1, "🍔", 4.6,
-            listOf("2x Carnes Smash (90g cada)", "Queijo Cheddar Artesanal", "Picles Fatiado", "Molho Especial BurgerCraft", "Pão Brioche Selado")
+            4, "Doritos Double Smash",
+            "Duas carnes smash, cheddar duplo, bacon, chips de Doritos crocantes e molho especial. Acompanha pote extra de molho.",
+            42.90, 1, "🔥", 4.9,
+            listOf("2x Carnes Smash (90g cada)", "Cheddar Duplo", "Bacon", "Chips de Doritos", "Molho Especial", "Molho Barbecue", "Pão com Gergelim"),
+            foto = R.drawable.foto_doritos_smash
         ),
-        Produto(5, "Cerveja Artesanal IPA", "Lata gelada 350ml.", 14.00, 2, "🍺", 4.8),
-        Produto(6, "Refrigerante Lata", "Coca-Cola, Guaraná ou Sprite 350ml.", 6.00, 2, "🥤", 4.5),
-        Produto(7, "Combo Smash + Batata + Refri", "Smash Clássico, batata média e refrigerante.", 29.90, 3, "🍱", 4.9),
-        Produto(8, "Batata Frita Rústica", "Batata rústica com sal de alecrim.", 4.90, 4, "🍟", 4.7),
-        Produto(9, "Onion Rings", "Anéis de cebola empanados com molho barbecue.", 8.90, 4, "🧅", 4.4)
+        Produto(5, "Ice Tea de Limão com Canela", "Chá gelado com limão-siciliano, hortelã e canela em pau. Copo 400ml.", 12.90, 2, "🍹", 4.7, foto = R.drawable.foto_ice_tea_canela),
+        Produto(6, "Milkshake de Chocolate", "Milkshake cremoso de chocolate com chantilly, calda e raspas de chocolate. 400ml.", 19.90, 2, "🥤", 4.9, foto = R.drawable.foto_milkshake_chocolate),
+        Produto(7, "Chá Gelado com Limão e Hortelã", "Chá gelado com gás, rodela de limão e folhas de hortelã. Copo 350ml.", 10.90, 2, "🍋", 4.6, foto = R.drawable.foto_cha_gelado),
+        Produto(8, "Batata Frita Tradicional", "Porção de batata frita crocante com sal e pimenta-do-reino.", 14.90, 4, "🍟", 4.7, foto = R.drawable.foto_batata_frita),
+        Produto(9, "Batata Rústica com Alecrim", "Batatas rústicas assadas com alecrim fresco, alho e sal grosso.", 18.90, 4, "🥔", 4.8, foto = R.drawable.foto_batata_rustica),
+        Produto(10, "Batata com Pulled Pork", "Batata rústica coberta com pulled pork, molho barbecue, cebola crispy, cebolinha e coleslaw.", 29.90, 4, "🍖", 4.9, foto = R.drawable.foto_batata_pulled_pork)
     )
 
     // ---------- Carrinho, pedidos e favoritos ----------
     val carrinho = mutableStateListOf<ItemCarrinho>()
     val pedidos = mutableStateListOf<Pedido>()
     val favoritos = mutableStateListOf<Int>()
+
+    // ---------- Sessão (login em memória) ----------
+    // Credenciais fixas de demonstração: usuário → (senha, perfil)
+    private val credenciais = mapOf(
+        "admin" to ("admin123" to Perfil.ADMIN),
+        "user" to ("1234" to Perfil.CLIENTE)
+    )
+
+    // null = ninguém logado
+    var perfilLogado by mutableStateOf<Perfil?>(null)
+        private set
+
+    val isAdmin: Boolean get() = perfilLogado == Perfil.ADMIN
 
     // ---------- Perfil ----------
     var nomeUsuario by mutableStateOf("Visitante")
@@ -81,9 +99,24 @@ class BurgerViewModel : ViewModel() {
         private set
 
     private var proximoIdCategoria by mutableIntStateOf(5)
-    private var proximoIdProduto by mutableIntStateOf(10)
+    private var proximoIdProduto by mutableIntStateOf(11)
     private var proximoIdItem by mutableIntStateOf(1)
     private var proximoNumeroPedido by mutableIntStateOf(1001)
+
+    // ===== Sessão =====
+    // Retorna true se usuário e senha baterem com alguma credencial
+    fun login(usuario: String, senha: String): Boolean {
+        val (senhaCorreta, perfil) = credenciais[usuario.trim().lowercase()] ?: return false
+        if (senha != senhaCorreta) return false
+        perfilLogado = perfil
+        return true
+    }
+
+    // Encerra a sessão: sem permissões e carrinho vazio para o próximo perfil
+    fun logout() {
+        perfilLogado = null
+        carrinho.clear()
+    }
 
     // ===== Categorias =====
     fun buscarCategoria(id: Int): Categoria? = categorias.find { it.id == id }

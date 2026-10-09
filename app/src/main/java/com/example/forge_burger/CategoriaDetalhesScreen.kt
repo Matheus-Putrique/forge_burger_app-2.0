@@ -93,7 +93,8 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
             if (produtos.isEmpty()) {
                 item {
                     Text(
-                        "Nenhum produto ainda. Cadastre um pelo botão \"Novo lanche\" no cardápio.",
+                        if (viewModel.isAdmin) "Nenhum produto ainda. Cadastre um pelo botão \"Novo lanche\" no cardápio."
+                        else "Nenhum produto nesta categoria por enquanto.",
                         color = CorTextoCinza,
                         fontSize = 14.sp
                     )
@@ -107,7 +108,7 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
                         .clickable { navController.navigate(Rotas.produto(produto.id)) }
                 ) {
                     Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                        FotoProduto(produto.emoji, modifier = Modifier.size(54.dp))
+                        FotoProduto(produto.emoji, foto = produto.foto, modifier = Modifier.size(54.dp))
                         Spacer(Modifier.width(12.dp))
                         Column(Modifier.weight(1f)) {
                             Text(produto.nome, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
@@ -119,7 +120,8 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
                 }
             }
 
-            item {
+            // Cadastro só para o Administrador
+            if (viewModel.isAdmin) item {
                 Spacer(Modifier.height(8.dp))
                 BotaoLaranja(
                     texto = "Novo produto",

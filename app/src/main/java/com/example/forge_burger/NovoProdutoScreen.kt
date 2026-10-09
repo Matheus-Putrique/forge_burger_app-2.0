@@ -6,7 +6,6 @@ package com.example.forge_burger
 // ╚══════════════════════════════════════════════╝
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -34,6 +33,7 @@ import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewModel, categoriaInicial: Int = -1) {
     var emoji by remember { mutableStateOf("") }
@@ -137,10 +137,10 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
             TituloSecao("Categoria *")
             Spacer(Modifier.height(8.dp))
 
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState())
+            // Quebram para a linha de baixo quando não cabem, assim nenhuma fica cortada
+            FlowRow(
+                modifier = Modifier.fillMaxWidth(),
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
                 viewModel.categorias.forEach { categoria ->
                     val ativo = categoria.id == categoriaId

@@ -3,7 +3,7 @@ package com.example.forge_burger
 // ╔══════════════════════════════════════════════╗
 // ║  CategoriasScreen.kt                         ║
 // ║  LISTA DE CATEGORIAS                         ║
-// ║  Adicionar (formulário) · Remover (lixeira)  ║
+// ║  Adicionar · Remover: só Administrador       ║
 // ║  Clique no card → detalhes da categoria      ║
 // ╚══════════════════════════════════════════════╝
 
@@ -20,6 +20,7 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -40,10 +41,11 @@ import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 @Composable
 fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     val context = LocalContext.current
+    val isAdmin = viewModel.isAdmin
 
-    var nome by remember { mutableStateOf("") }
-    var emoji by remember { mutableStateOf("") }
-    var descricao by remember { mutableStateOf("") }
+    var nome by rememberSaveable { mutableStateOf("") }
+    var emoji by rememberSaveable { mutableStateOf("") }
+    var descricao by rememberSaveable { mutableStateOf("") }
 
     Column(
         modifier = Modifier
@@ -58,8 +60,8 @@ fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewMode
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ----- Formulário de nova categoria -----
-            item {
+            // ----- Formulário de nova categoria (só admin) -----
+            if (isAdmin) item {
                 CardEscuro(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text("Nova categoria", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
@@ -122,12 +124,12 @@ fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewMode
                     categoria = categoria,
                     quantidadeProdutos = viewModel.produtosDaCategoria(categoria.id).size,
                     onClick = { navController.navigate(Rotas.categoria(categoria.id)) },
-                    onRemover = {
+                    onRemover = if (isAdmin) ({
                         val removeu = viewModel.removerCategoria(categoria)
                         val msg = if (removeu) "Categoria removida"
                         else "Remova os produtos de \"${categoria.nome}\" antes"
                         Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
-                    }
+                    }) else null
                 )
             }
         }
@@ -139,7 +141,8 @@ private fun CardCategoria(
     categoria: Categoria,
     quantidadeProdutos: Int,
     onClick: () -> Unit,
-    onRemover: () -> Unit
+    // null = sem permissão (lixeira escondida)
+    onRemover: (() -> Unit)?
 ) {
     CardEscuro(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
         Row(
@@ -159,8 +162,10 @@ private fun CardCategoria(
                     Text(categoria.descricao, color = CorTextoCinza, fontSize = 12.sp, maxLines = 1)
                 }
             }
-            IconButton(onClick = onRemover) {
-                Icon(Icons.Default.Delete, contentDescription = "Remover", tint = CorTextoCinza)
+            if (onRemover != null) {
+                IconButton(onClick = onRemover) {
+                    Icon(Icons.Default.Delete, contentDescription = "Remover", tint = CorTextoCinza)
+                }
             }
         }
     }

@@ -3,14 +3,13 @@ package com.example.forge_burger
 // ╔══════════════════════════════════════════════╗
 // ║  MenuScreen.kt                               ║
 // ║  ABA INÍCIO: cardápio (lista de Produtos)    ║
-// ║  Clique → detalhes · Segurar → remover       ║
+// ║  Clique → detalhes · Segurar → remover (adm) ║
 // ╚══════════════════════════════════════════════╝
 
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
-import androidx.compose.foundation.horizontalScroll
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
@@ -28,6 +27,7 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -47,12 +47,15 @@ import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
 
+@OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     // null = "Todos"
-    var categoriaSelecionada by remember { mutableStateOf<Int?>(null) }
-    var ordenarPorPreco by remember { mutableStateOf(false) }
+    var categoriaSelecionada by rememberSaveable { mutableStateOf<Int?>(null) }
+    var ordenarPorPreco by rememberSaveable { mutableStateOf(false) }
     var produtoParaRemover by remember { mutableStateOf<Produto?>(null) }
+    // Cadastro e remoção só aparecem para o Administrador
+    val isAdmin = viewModel.isAdmin
 
     // Se a categoria escolhida foi apagada, volta para "Todos"
     val categoriaAtual = categoriaSelecionada?.let { viewModel.buscarCategoria(it) }
@@ -80,10 +83,10 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 Spacer(modifier = Modifier.height(16.dp))
 
                 // Chips de categoria (vêm da lista de Categorias)
-                Row(
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .horizontalScroll(rememberScrollState())
+                // Quebram para a linha de baixo quando não cabem, assim nenhum fica cortado
+                FlowRow(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
                     ChipCategoria("Todos", categoriaAtual == null) { categoriaSelecionada = null }
                     viewModel.categorias.forEach { categoria ->
@@ -91,7 +94,9 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                             categoriaSelecionada = categoria.id
                         }
                     }
-                    ChipCategoria("+ Gerenciar", false) { navController.navigate(Rotas.CATEGORIAS) }
+                    if (isAdmin) {
+                        ChipCategoria("+ Gerenciar", false) { navController.navigate(Rotas.CATEGORIAS) }
+                    }
                 }
 
                 Spacer(modifier = Modifier.height(20.dp))
@@ -115,7 +120,8 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                 }
                 Text(
-                    text = "Toque para personalizar • 🗑 ou segure para remover",
+                    text = if (isAdmin) "Toque para personalizar • 🗑 ou segure para remover"
+                    else "Toque para personalizar e adicionar ao carrinho",
                     color = CorTextoCinza,
                     fontSize = 12.sp
                 )
@@ -124,7 +130,11 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
 
             if (produtosFiltrados.isEmpty()) {
                 item {
-                    EstadoVazio("🍽️", "Nenhum produto aqui", "Toque em \"Novo lanche\" para cadastrar.")
+                    EstadoVazio(
+                        "🍽️",
+                        "Nenhum produto aqui",
+                        if (isAdmin) "Toque em \"Novo lanche\" para cadastrar." else "Volte mais tarde para novidades."
+                    )
                 }
             }
 
@@ -136,7 +146,7 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                         CardMenuBurger(
                             produto = produto,
                             onClick = { navController.navigate(Rotas.produto(produto.id)) },
-                            onLongClick = { produtoParaRemover = produto },
+                            onRemover = if (isAdmin) ({ produtoParaRemover = produto }) else null,
                             modifier = Modifier.weight(1f)
                         )
                     }
@@ -149,20 +159,22 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
             }
         }
 
-        ExtendedFloatingActionButton(
-            onClick = { navController.navigate(Rotas.novoProduto(categoriaAtual?.id)) },
-            containerColor = CorLaranja,
-            contentColor = Color.Black,
-            icon = { Icon(Icons.Default.Add, contentDescription = null) },
-            text = { Text("Novo lanche", fontWeight = FontWeight.Bold) },
-            modifier = Modifier
-                .align(Alignment.BottomEnd)
-                .padding(16.dp)
-        )
+        if (isAdmin) {
+            ExtendedFloatingActionButton(
+                onClick = { navController.navigate(Rotas.novoProduto(categoriaAtual?.id)) },
+                containerColor = CorLaranja,
+                contentColor = Color.Black,
+                icon = { Icon(Icons.Default.Add, contentDescription = null) },
+                text = { Text("Novo lanche", fontWeight = FontWeight.Bold) },
+                modifier = Modifier
+                    .align(Alignment.BottomEnd)
+                    .padding(16.dp)
+            )
+        }
     }
 
     // Confirmação antes de remover
-    produtoParaRemover?.let { produto ->
+    produtoParaRemover?.takeIf { isAdmin }?.let { produto ->
         AlertDialog(
             onDismissRequest = { produtoParaRemover = null },
             title = { Text("Remover produto?") },
@@ -231,15 +243,17 @@ private fun ChipCategoria(nome: String, ativo: Boolean, onClick: () -> Unit) {
 fun CardMenuBurger(
     produto: Produto,
     onClick: () -> Unit,
-    onLongClick: () -> Unit,
+    // null = sem permissão para remover (some a lixeira e o "segurar")
+    onRemover: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
     CardEscuro(
-        modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onLongClick)
+        modifier = modifier.combinedClickable(onClick = onClick, onLongClick = onRemover)
     ) {
         Column(modifier = Modifier.padding(10.dp)) {
             FotoProduto(
                 emoji = produto.emoji,
+                foto = produto.foto,
                 tamanhoEmoji = 48,
                 modifier = Modifier
                     .fillMaxWidth()
@@ -269,13 +283,15 @@ fun CardMenuBurger(
                     modifier = Modifier.weight(1f)
                 )
                 // Lixeira: remove o produto da lista (pede confirmação)
-                IconButton(onClick = onLongClick, modifier = Modifier.size(28.dp)) {
-                    Icon(
-                        Icons.Default.Delete,
-                        contentDescription = "Remover",
-                        tint = CorTextoCinza,
-                        modifier = Modifier.size(18.dp)
-                    )
+                if (onRemover != null) {
+                    IconButton(onClick = onRemover, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            Icons.Default.Delete,
+                            contentDescription = "Remover",
+                            tint = CorTextoCinza,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
                 }
             }
 

@@ -75,7 +75,7 @@ fun PedidoScreen(navController: NavHostController, viewModel: BurgerViewModel, n
 
             items(pedido.itens, key = { it.id }) { item ->
                 Row(Modifier.fillMaxWidth(), verticalAlignment = Alignment.CenterVertically) {
-                    FotoProduto(item.produto.emoji, modifier = Modifier.size(44.dp), tamanhoEmoji = 22)
+                    FotoProduto(item.produto.emoji, foto = item.produto.foto, modifier = Modifier.size(44.dp), tamanhoEmoji = 22)
                     Spacer(Modifier.width(12.dp))
                     Column(Modifier.weight(1f)) {
                         Text("${item.quantidade}x ${item.produto.nome}", color = Color.White, fontWeight = FontWeight.Bold)

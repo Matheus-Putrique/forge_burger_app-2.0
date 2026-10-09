@@ -6,6 +6,8 @@ package com.example.forge_burger
 // ║  Categoria · Produto · ItemCarrinho · Pedido ║
 // ╚══════════════════════════════════════════════╝
 
+import androidx.annotation.DrawableRes
+
 // Lista 1: categorias do cardápio (Hambúrgueres, Bebidas...)
 data class Categoria(
     val id: Int,
@@ -23,7 +25,9 @@ data class Produto(
     val categoriaId: Int,
     val emoji: String,
     val nota: Double = 5.0,
-    val ingredientes: List<String> = emptyList()
+    val ingredientes: List<String> = emptyList(),
+    // Foto em res/drawable (null = mostra o emoji)
+    @DrawableRes val foto: Int? = null
 )
 
 // Adicional que pode ser colocado no lanche na tela de personalização
@@ -61,4 +65,10 @@ data class Pedido(
     val endereco: String
 ) {
     val total: Double get() = subtotal + taxaEntrega
+}
+
+// Perfil de quem está logado: ADMIN cadastra/remove, CLIENTE só compra
+enum class Perfil(val rotulo: String) {
+    ADMIN("Administrador"),
+    CLIENTE("Cliente")
 }

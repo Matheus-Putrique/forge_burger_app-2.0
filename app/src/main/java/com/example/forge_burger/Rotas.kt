@@ -6,6 +6,9 @@ package com.example.forge_burger
 // ╚══════════════════════════════════════════════╝
 
 object Rotas {
+    // Tela inicial (sem BottomNavigation)
+    const val LOGIN = "login"
+
     // Abas do BottomNavigation
     const val INICIO = "inicio"
     const val BUSCA = "busca"

@@ -3,7 +3,7 @@ package com.example.forge_burger
 // ╔══════════════════════════════════════════════╗
 // ║  PerfilScreen.kt                             ║
 // ║  ABA PERFIL: dados de entrega, favoritos     ║
-// ║  e histórico de pedidos                      ║
+// ║  histórico de pedidos e Logout               ║
 // ╚══════════════════════════════════════════════╝
 
 import android.widget.Toast
@@ -15,8 +15,10 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ExitToApp
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material3.Icon
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
@@ -49,6 +51,7 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     var telefone by remember { mutableStateOf(viewModel.telefone) }
 
     val favoritos = viewModel.favoritos.mapNotNull { viewModel.buscarProduto(it) }
+    val isAdmin = viewModel.isAdmin
 
     LazyColumn(
         modifier = Modifier
@@ -76,6 +79,27 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     color = CorTextoCinza,
                     fontSize = 13.sp
                 )
+                Spacer(Modifier.height(8.dp))
+                // Selo do perfil logado
+                Surface(
+                    shape = RoundedCornerShape(20.dp),
+                    color = if (isAdmin) CorLaranja else Color(60, 45, 20)
+                ) {
+                    Text(
+                        text = viewModel.perfilLogado?.rotulo ?: "Sem sessão",
+                        color = if (isAdmin) Color.Black else CorLaranja,
+                        fontSize = 12.sp,
+                        fontWeight = FontWeight.Bold,
+                        modifier = Modifier.padding(horizontal = 14.dp, vertical = 4.dp)
+                    )
+                }
+                Spacer(Modifier.height(12.dp))
+                // Logout: o AppNavigation percebe a sessão vazia e volta ao Login
+                OutlinedButton(onClick = { viewModel.logout() }) {
+                    Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = CorLaranja)
+                    Spacer(Modifier.width(8.dp))
+                    Text("Sair", color = CorLaranja, fontWeight = FontWeight.Bold)
+                }
             }
         }
 
@@ -136,7 +160,7 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 Row(Modifier.padding(16.dp), verticalAlignment = Alignment.CenterVertically) {
                     Text("🗂️", fontSize = 22.sp)
                     Spacer(Modifier.width(12.dp))
-                    Text("Gerenciar categorias", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+                    Text(if (isAdmin) "Gerenciar categorias" else "Ver categorias", color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Text("›", color = CorLaranja, fontSize = 22.sp)
                 }
             }
@@ -153,7 +177,7 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     .clickable { navController.navigate(Rotas.produto(produto.id)) }
             ) {
                 Row(Modifier.padding(12.dp), verticalAlignment = Alignment.CenterVertically) {
-                    FotoProduto(produto.emoji, modifier = Modifier.size(44.dp), tamanhoEmoji = 22)
+                    FotoProduto(produto.emoji, foto = produto.foto, modifier = Modifier.size(44.dp), tamanhoEmoji = 22)
                     Spacer(Modifier.width(12.dp))
                     Text(produto.nome, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
                     Text(formatarPreco(produto.preco), color = CorLaranja, fontWeight = FontWeight.Bold)

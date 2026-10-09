@@ -12,10 +12,11 @@ Aplicativo Android nativo em **Kotlin + Jetpack Compose (Material 3)** para pedi
 
 Ou pela linha de comando: `./gradlew assembleDebug`.
 
-## 📱 Telas (9)
+## 📱 Telas (10)
 
 | # | Tela | Arquivo | O que faz |
 |---|------|---------|-----------|
+| 0 | Login | `LoginScreen.kt` | Entrada com dois perfis de demonstração: **Administrador** (`admin` / `admin123`) cadastra e remove; **Cliente** (`user` / `1234`) só compra. |
 | 1 | Início (Cardápio) | `MenuScreen.kt` | **Lista de Produtos** (LazyColumn + Card, em grade de 2), filtro por categoria, ordenar por preço. Toque abre os detalhes; **segurar remove** (com confirmação). |
 | 2 | Novo produto | `NovoProdutoScreen.kt` | Formulário para **adicionar Produto** (nome, preço numérico, descrição de várias linhas, ícone, categoria). |
 | 3 | Detalhes do produto | `CustomizationScreen.kt` | Recebe `produtoId` pela rota. Ponto da carne (RadioButton), adicionais (Checkbox), observações, quantidade, **preço calculado**, categoria do produto (clicável) e favoritar. |
@@ -48,3 +49,7 @@ Abas do **BottomNavigation**: Início · Buscar · Carrinho · Perfil (com conta
 Kotlin · Jetpack Compose (Material 3) · Navigation Compose · ViewModel
 
 > Os dados ficam só em memória: ao fechar o app, tudo volta ao estado inicial.
+
+## 📄 Relatório do Trabalho 2
+
+Respostas e prints em [`docs/RELATORIO_TRABALHO_2.md`](docs/RELATORIO_TRABALHO_2.md).

@@ -10,6 +10,7 @@ import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Modifier
 import androidx.lifecycle.viewmodel.compose.viewModel
@@ -32,6 +33,14 @@ fun AppNavigation() {
     val backStackEntry by navController.currentBackStackEntryAsState()
     val rotaAtual = backStackEntry?.destination?.route
 
+    // Sem sessão (logout ou app recriado) → volta para o Login
+    // rotaAtual != null garante que o NavHost já montou o grafo
+    LaunchedEffect(viewModel.perfilLogado, rotaAtual) {
+        if (viewModel.perfilLogado == null && rotaAtual != null && rotaAtual != Rotas.LOGIN) {
+            navController.irParaLogin()
+        }
+    }
+
     Scaffold(
         containerColor = CorFundo,
         bottomBar = {
@@ -46,11 +55,14 @@ fun AppNavigation() {
     ) { padding ->
         NavHost(
             navController = navController,
-            startDestination = Rotas.INICIO,
+            startDestination = Rotas.LOGIN,
             modifier = Modifier
                 .padding(padding)
                 .consumeWindowInsets(padding)
         ) {
+            // ----- Login -----
+            composable(Rotas.LOGIN) { LoginScreen(navController, viewModel) }
+
             // ----- Abas -----
             composable(Rotas.INICIO) { MenuScreen(navController, viewModel) }
             composable(Rotas.BUSCA) { BuscaScreen(navController, viewModel) }
@@ -64,7 +76,12 @@ fun AppNavigation() {
                 arguments = listOf(navArgument("categoriaId") { type = NavType.IntType; defaultValue = -1 })
             ) { entry ->
                 val categoriaId = entry.arguments?.getInt("categoriaId") ?: -1
-                NovoProdutoScreen(navController, viewModel, categoriaInicial = categoriaId)
+                // Cadastro é só do Administrador: cliente que cair aqui volta
+                if (viewModel.isAdmin) {
+                    NovoProdutoScreen(navController, viewModel, categoriaInicial = categoriaId)
+                } else {
+                    LaunchedEffect(Unit) { navController.popBackStack() }
+                }
             }
 
             // ----- Detalhes (recebem argumento pela rota) -----
@@ -91,4 +108,15 @@ fun NavHostController.irParaAba(rota: String) {
         launchSingleTop = true
         restoreState = true
     }
+}
+
+// Limpa toda a pilha e abre o Login (usado no logout)
+fun NavHostController.irParaLogin() {
+    navigate(Rotas.LOGIN) {
+        popUpTo(graph.id) { inclusive = true }
+        launchSingleTop = true
+    }
+    // Descarta as pilhas salvas das abas (irParaAba usa saveState),
+    // senão o próximo perfil reabriria as telas da sessão anterior
+    Rotas.abas.forEach { clearBackStack(it) }
 }

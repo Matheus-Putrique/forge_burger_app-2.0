@@ -7,6 +7,7 @@ package com.example.forge_burger
 // ║    preço calculado e categoria do produto    ║
 // ╚══════════════════════════════════════════════╝
 
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -26,9 +27,14 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.runtime.toMutableStateList
+import androidx.compose.runtime.saveable.listSaver
+import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
@@ -60,10 +66,18 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
     val categoria = viewModel.buscarCategoria(produto.categoriaId)
     val ehLanche = produto.categoriaId == 1
 
-    var quantidade by remember { mutableIntStateOf(1) }
-    var pontoCarne by remember { mutableStateOf(viewModel.pontosCarne[1]) }
-    val adicionaisEscolhidos = remember { mutableStateListOf<Adicional>() }
-    var observacao by remember { mutableStateOf("") }
+    var quantidade by rememberSaveable { mutableIntStateOf(1) }
+    var pontoCarne by rememberSaveable { mutableStateOf(viewModel.pontosCarne[1]) }
+    // Salva só os nomes dos adicionais, para a escolha sobreviver ao voltar de outra tela
+    val adicionaisEscolhidos = rememberSaveable(
+        saver = listSaver(
+            save = { lista -> lista.map { it.nome } },
+            restore = { nomes ->
+                viewModel.adicionaisDisponiveis.filter { it.nome in nomes }.toMutableStateList()
+            }
+        )
+    ) { mutableStateListOf<Adicional>() }
+    var observacao by rememberSaveable { mutableStateOf("") }
 
     // Informação calculada: preço base + adicionais, vezes a quantidade
     val precoUnitario = produto.preco + adicionaisEscolhidos.sumOf { it.preco }
@@ -101,7 +115,16 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                     .background(Color(40, 30, 25)),
                 contentAlignment = Alignment.Center
             ) {
-                Text(text = produto.emoji, fontSize = 110.sp)
+                if (produto.foto != null) {
+                    Image(
+                        painter = painterResource(produto.foto),
+                        contentDescription = produto.nome,
+                        contentScale = ContentScale.Crop,
+                        modifier = Modifier.fillMaxSize()
+                    )
+                } else {
+                    Text(text = produto.emoji, fontSize = 110.sp)
+                }
             }
 
             Column(modifier = Modifier.padding(16.dp)) {
