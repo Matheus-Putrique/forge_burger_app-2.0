@@ -1,12 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  CustomizationScreen.kt                      ║
-// ║  DETALHES DO PRODUTO (recebe produtoId)      ║
-// ║  + ponto da carne, adicionais, observação,   ║
-// ║    preço calculado e categoria do produto    ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -68,7 +61,6 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
 
     var quantidade by rememberSaveable { mutableIntStateOf(1) }
     var pontoCarne by rememberSaveable { mutableStateOf(viewModel.pontosCarne[1]) }
-    // Salva só os nomes dos adicionais, para a escolha sobreviver ao voltar de outra tela
     val adicionaisEscolhidos = rememberSaveable(
         saver = listSaver(
             save = { lista -> lista.map { it.nome } },
@@ -79,7 +71,6 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
     ) { mutableStateListOf<Adicional>() }
     var observacao by rememberSaveable { mutableStateOf("") }
 
-    // Informação calculada: preço base + adicionais, vezes a quantidade
     val precoUnitario = produto.preco + adicionaisEscolhidos.sumOf { it.preco }
     val precoTotalAtual = precoUnitario * quantidade
 
@@ -147,7 +138,6 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                     )
                 }
 
-                // Dado vindo da OUTRA lista: a categoria do produto (clicável)
                 if (categoria != null) {
                     Spacer(modifier = Modifier.height(8.dp))
                     Surface(

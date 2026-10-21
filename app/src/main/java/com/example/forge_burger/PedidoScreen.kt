@@ -1,11 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  PedidoScreen.kt                             ║
-// ║  PEDIDO CONFIRMADO / detalhes de um pedido   ║
-// ║  (recebe o número do pedido pela rota)       ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
@@ -41,7 +35,6 @@ fun PedidoScreen(navController: NavHostController, viewModel: BurgerViewModel, n
             return@Column
         }
 
-        // Estimativa simples: 25 min + 3 min por item
         val minutos = 25 + pedido.itens.sumOf { it.quantidade } * 3
 
         LazyColumn(

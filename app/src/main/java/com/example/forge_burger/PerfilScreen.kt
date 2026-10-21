@@ -1,11 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  PerfilScreen.kt                             ║
-// ║  ABA PERFIL: dados de entrega, favoritos     ║
-// ║  histórico de pedidos e Logout               ║
-// ╚══════════════════════════════════════════════╝
-
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -45,7 +39,6 @@ import com.example.forge_burger.ui.theme.formatarPreco
 fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     val context = LocalContext.current
 
-    // Rascunho local até apertar "Salvar"
     var nome by remember { mutableStateOf(viewModel.nomeUsuario) }
     var endereco by remember { mutableStateOf(viewModel.endereco) }
     var telefone by remember { mutableStateOf(viewModel.telefone) }
@@ -80,7 +73,6 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     fontSize = 13.sp
                 )
                 Spacer(Modifier.height(8.dp))
-                // Selo do perfil logado
                 Surface(
                     shape = RoundedCornerShape(20.dp),
                     color = if (isAdmin) CorLaranja else Color(60, 45, 20)
@@ -94,7 +86,6 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                 }
                 Spacer(Modifier.height(12.dp))
-                // Logout: o AppNavigation percebe a sessão vazia e volta ao Login
                 OutlinedButton(onClick = { viewModel.logout() }) {
                     Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = CorLaranja)
                     Spacer(Modifier.width(8.dp))

@@ -1,10 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  NovoProdutoScreen.kt                        ║
-// ║  FORMULÁRIO: adiciona Produto no cardápio    ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -46,7 +41,6 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
         )
     }
 
-    // Aceita "12,90" ou "12.90"
     val preco = precoTexto.replace(',', '.').toDoubleOrNull()
     val precoInvalido = precoTexto.isNotBlank() && (preco == null || preco <= 0)
     val podeSalvar = nome.isNotBlank() && preco != null && preco > 0 && viewModel.buscarCategoria(categoriaId) != null
@@ -65,7 +59,6 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // Prévia do card como vai aparecer no cardápio
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FotoProduto(emoji.ifBlank { "🍔" }, tamanhoEmoji = 40, modifier = Modifier.size(84.dp))
                 Spacer(Modifier.width(16.dp))
@@ -137,7 +130,6 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
             TituloSecao("Categoria *")
             Spacer(Modifier.height(8.dp))
 
-            // Quebram para a linha de baixo quando não cabem, assim nenhuma fica cortada
             FlowRow(
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)

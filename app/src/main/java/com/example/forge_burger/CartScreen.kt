@@ -1,11 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  CartScreen.kt                               ║
-// ║  ABA CARRINHO: itens, entrega, pagamento     ║
-// ║  e finalização do pedido                     ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*

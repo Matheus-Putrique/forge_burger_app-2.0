@@ -1,10 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  Componentes.kt                              ║
-// ║  Pedaços de tela reaproveitados              ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -50,7 +45,6 @@ import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
 
-// TopAppBar com botão de voltar (usada nas telas internas)
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun BarraTopo(titulo: String, onVoltar: () -> Unit, acoes: @Composable () -> Unit = {}) {
@@ -72,7 +66,6 @@ fun BarraTopo(titulo: String, onVoltar: () -> Unit, acoes: @Composable () -> Uni
     )
 }
 
-// Cabeçalho "BURGERCRAFT" das abas principais
 @Composable
 fun CabecalhoMarca(onMenu: () -> Unit, onPerfil: () -> Unit, modifier: Modifier = Modifier) {
     Row(
@@ -106,7 +99,6 @@ fun CabecalhoMarca(onMenu: () -> Unit, onPerfil: () -> Unit, modifier: Modifier 
     }
 }
 
-// Foto do produto: imagem quando houver, senão o emoji num quadrado escuro
 @Composable
 fun FotoProduto(
     emoji: String,
@@ -134,7 +126,6 @@ fun FotoProduto(
     }
 }
 
-// Seletor  -  2  +
 @Composable
 fun SeletorQuantidade(
     quantidade: Int,
@@ -173,7 +164,6 @@ fun SeletorQuantidade(
     }
 }
 
-// Botão laranja grande (Adicionar, Finalizar, Salvar...)
 @Composable
 fun BotaoLaranja(texto: String, onClick: () -> Unit, modifier: Modifier = Modifier, habilitado: Boolean = true) {
     Button(
@@ -192,7 +182,6 @@ fun BotaoLaranja(texto: String, onClick: () -> Unit, modifier: Modifier = Modifi
     }
 }
 
-// Cores padrão dos campos de formulário
 @Composable
 fun coresCampo() = OutlinedTextFieldDefaults.colors(
     focusedBorderColor = CorLaranja,
@@ -206,7 +195,6 @@ fun coresCampo() = OutlinedTextFieldDefaults.colors(
     unfocusedContainerColor = CorCard
 )
 
-// Mensagem de "nada aqui"
 @Composable
 fun EstadoVazio(emoji: String, titulo: String, subtitulo: String, modifier: Modifier = Modifier) {
     Column(
@@ -224,7 +212,6 @@ fun EstadoVazio(emoji: String, titulo: String, subtitulo: String, modifier: Modi
     }
 }
 
-// Linha "Subtotal ........ R$ 10,00"
 @Composable
 fun LinhaValor(rotulo: String, valor: String, destaque: Boolean = false) {
     Row(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {

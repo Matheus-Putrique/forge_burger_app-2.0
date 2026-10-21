@@ -1,11 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  AppNavigation.kt                            ║
-// ║  NavHost com TODAS as telas do app           ║
-// ║  BottomNavBar só aparece nas abas principais ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.layout.consumeWindowInsets
 import androidx.compose.foundation.layout.padding
 import androidx.compose.material3.Scaffold
@@ -27,14 +21,11 @@ import com.example.forge_burger.ui.theme.CorFundo
 fun AppNavigation() {
     val navController = rememberNavController()
 
-    // ViewModel criado UMA VEZ e compartilhado entre todas as telas
     val viewModel: BurgerViewModel = viewModel()
 
     val backStackEntry by navController.currentBackStackEntryAsState()
     val rotaAtual = backStackEntry?.destination?.route
 
-    // Sem sessão (logout ou app recriado) → volta para o Login
-    // rotaAtual != null garante que o NavHost já montou o grafo
     LaunchedEffect(viewModel.perfilLogado, rotaAtual) {
         if (viewModel.perfilLogado == null && rotaAtual != null && rotaAtual != Rotas.LOGIN) {
             navController.irParaLogin()
@@ -60,23 +51,19 @@ fun AppNavigation() {
                 .padding(padding)
                 .consumeWindowInsets(padding)
         ) {
-            // ----- Login -----
             composable(Rotas.LOGIN) { LoginScreen(navController, viewModel) }
 
-            // ----- Abas -----
             composable(Rotas.INICIO) { MenuScreen(navController, viewModel) }
             composable(Rotas.BUSCA) { BuscaScreen(navController, viewModel) }
             composable(Rotas.CARRINHO) { CartScreen(navController, viewModel) }
             composable(Rotas.PERFIL) { PerfilScreen(navController, viewModel) }
 
-            // ----- Listas / formulários -----
             composable(Rotas.CATEGORIAS) { CategoriasScreen(navController, viewModel) }
             composable(
                 route = Rotas.NOVO_PRODUTO,
                 arguments = listOf(navArgument("categoriaId") { type = NavType.IntType; defaultValue = -1 })
             ) { entry ->
                 val categoriaId = entry.arguments?.getInt("categoriaId") ?: -1
-                // Cadastro é só do Administrador: cliente que cair aqui volta
                 if (viewModel.isAdmin) {
                     NovoProdutoScreen(navController, viewModel, categoriaInicial = categoriaId)
                 } else {
@@ -84,7 +71,6 @@ fun AppNavigation() {
                 }
             }
 
-            // ----- Detalhes (recebem argumento pela rota) -----
             composable(Rotas.PRODUTO) { entry ->
                 val id = entry.arguments?.getString("produtoId")?.toIntOrNull() ?: -1
                 CustomizationScreen(navController, viewModel, produtoId = id)
@@ -101,7 +87,6 @@ fun AppNavigation() {
     }
 }
 
-// Troca de aba sem empilhar várias cópias da mesma tela
 fun NavHostController.irParaAba(rota: String) {
     navigate(rota) {
         popUpTo(Rotas.INICIO) { saveState = true }
@@ -110,13 +95,10 @@ fun NavHostController.irParaAba(rota: String) {
     }
 }
 
-// Limpa toda a pilha e abre o Login (usado no logout)
 fun NavHostController.irParaLogin() {
     navigate(Rotas.LOGIN) {
         popUpTo(graph.id) { inclusive = true }
         launchSingleTop = true
     }
-    // Descarta as pilhas salvas das abas (irParaAba usa saveState),
-    // senão o próximo perfil reabriria as telas da sessão anterior
     Rotas.abas.forEach { clearBackStack(it) }
 }

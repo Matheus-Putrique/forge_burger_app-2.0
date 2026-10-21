@@ -1,12 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  CategoriaDetalhesScreen.kt                  ║
-// ║  DETALHES DA CATEGORIA (recebe categoriaId)  ║
-// ║  Combina as duas listas: mostra os produtos  ║
-// ║  da categoria + estatísticas calculadas      ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -69,7 +62,6 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
                 }
             }
 
-            // Informações calculadas a partir da lista de produtos
             item {
                 Row(Modifier.fillMaxWidth()) {
                     CardEstatistica("Produtos", "${produtos.size}", Modifier.weight(1f))
@@ -120,7 +112,6 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
                 }
             }
 
-            // Cadastro só para o Administrador
             if (viewModel.isAdmin) item {
                 Spacer(Modifier.height(8.dp))
                 BotaoLaranja(

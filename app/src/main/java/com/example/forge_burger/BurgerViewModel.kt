@@ -1,11 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  BurgerViewModel.kt                          ║
-// ║  Guarda as listas do app (mutableStateList)  ║
-// ║  Compartilhado entre todas as telas          ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
 import androidx.compose.runtime.mutableStateListOf
@@ -26,7 +20,6 @@ class BurgerViewModel : ViewModel() {
         Adicional("Cebola Caramelizada", 2.00)
     )
 
-    // ---------- Lista 1: Categorias ----------
     val categorias = mutableStateListOf(
         Categoria(1, "Hambúrgueres", "🍔", "Smash burgers artesanais no pão brioche."),
         Categoria(2, "Bebidas", "🥤", "Refrigerantes, sucos e cervejas artesanais."),
@@ -34,7 +27,6 @@ class BurgerViewModel : ViewModel() {
         Categoria(4, "Acompanhamentos", "🍟", "Batatas, onion rings e porções.")
     )
 
-    // ---------- Lista 2: Produtos ----------
     val produtos = mutableStateListOf(
         Produto(
             1, "Classic Bacon Burger",
@@ -72,25 +64,20 @@ class BurgerViewModel : ViewModel() {
         Produto(10, "Batata com Pulled Pork", "Batata rústica coberta com pulled pork, molho barbecue, cebola crispy, cebolinha e coleslaw.", 29.90, 4, "🍖", 4.9, foto = R.drawable.foto_batata_pulled_pork)
     )
 
-    // ---------- Carrinho, pedidos e favoritos ----------
     val carrinho = mutableStateListOf<ItemCarrinho>()
     val pedidos = mutableStateListOf<Pedido>()
     val favoritos = mutableStateListOf<Int>()
 
-    // ---------- Sessão (login em memória) ----------
-    // Credenciais fixas de demonstração: usuário → (senha, perfil)
     private val credenciais = mapOf(
         "admin" to ("admin123" to Perfil.ADMIN),
         "user" to ("1234" to Perfil.CLIENTE)
     )
 
-    // null = ninguém logado
     var perfilLogado by mutableStateOf<Perfil?>(null)
         private set
 
     val isAdmin: Boolean get() = perfilLogado == Perfil.ADMIN
 
-    // ---------- Perfil ----------
     var nomeUsuario by mutableStateOf("Visitante")
         private set
     var endereco by mutableStateOf("Rua das Brasas, 120 - Curitiba")
@@ -103,8 +90,6 @@ class BurgerViewModel : ViewModel() {
     private var proximoIdItem by mutableIntStateOf(1)
     private var proximoNumeroPedido by mutableIntStateOf(1001)
 
-    // ===== Sessão =====
-    // Retorna true se usuário e senha baterem com alguma credencial
     fun login(usuario: String, senha: String): Boolean {
         val (senhaCorreta, perfil) = credenciais[usuario.trim().lowercase()] ?: return false
         if (senha != senhaCorreta) return false
@@ -112,13 +97,11 @@ class BurgerViewModel : ViewModel() {
         return true
     }
 
-    // Encerra a sessão: sem permissões e carrinho vazio para o próximo perfil
     fun logout() {
         perfilLogado = null
         carrinho.clear()
     }
 
-    // ===== Categorias =====
     fun buscarCategoria(id: Int): Categoria? = categorias.find { it.id == id }
 
     fun adicionarCategoria(nome: String, emoji: String, descricao: String) {
@@ -128,14 +111,12 @@ class BurgerViewModel : ViewModel() {
         proximoIdCategoria++
     }
 
-    // Só deixa remover se não tiver produto usando a categoria
     fun removerCategoria(categoria: Categoria): Boolean {
         if (produtosDaCategoria(categoria.id).isNotEmpty()) return false
         categorias.remove(categoria)
         return true
     }
 
-    // ===== Produtos =====
     fun buscarProduto(id: Int): Produto? = produtos.find { it.id == id }
 
     fun produtosDaCategoria(categoriaId: Int): List<Produto> =
@@ -161,14 +142,12 @@ class BurgerViewModel : ViewModel() {
         carrinho.removeAll { it.produto.id == produto.id }
     }
 
-    // ===== Favoritos =====
     fun ehFavorito(produtoId: Int) = favoritos.contains(produtoId)
 
     fun alternarFavorito(produtoId: Int) {
         if (favoritos.contains(produtoId)) favoritos.remove(produtoId) else favoritos.add(produtoId)
     }
 
-    // ===== Carrinho =====
     fun adicionarAoCarrinho(
         produto: Produto,
         pontoCarne: String,
@@ -200,7 +179,6 @@ class BurgerViewModel : ViewModel() {
 
     fun quantidadeNoCarrinho(): Int = carrinho.sumOf { it.quantidade }
 
-    // ===== Pedidos =====
     fun finalizarPedido(formaPagamento: String): Int {
         val pedido = Pedido(
             numero = proximoNumeroPedido,
@@ -218,7 +196,6 @@ class BurgerViewModel : ViewModel() {
 
     fun buscarPedido(numero: Int): Pedido? = pedidos.find { it.numero == numero }
 
-    // ===== Perfil =====
     fun salvarPerfil(nome: String, novoEndereco: String, novoTelefone: String) {
         nomeUsuario = nome.trim().ifBlank { "Visitante" }
         endereco = novoEndereco.trim()

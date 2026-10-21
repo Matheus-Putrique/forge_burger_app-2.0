@@ -1,11 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  LoginScreen.kt                              ║
-// ║  LOGIN em memória: admin/admin123 · user/1234║
-// ║  Sucesso → Início (limpa a pilha)            ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -56,7 +50,6 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
         }
         if (erro == null) {
             focusManager.clearFocus()
-            // Vai para o Início e tira o Login da pilha (voltar não retorna aqui)
             navController.navigate(Rotas.INICIO) {
                 popUpTo(Rotas.LOGIN) { inclusive = true }
                 launchSingleTop = true

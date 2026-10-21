@@ -1,12 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  CategoriasScreen.kt                         ║
-// ║  LISTA DE CATEGORIAS                         ║
-// ║  Adicionar · Remover: só Administrador       ║
-// ║  Clique no card → detalhes da categoria      ║
-// ╚══════════════════════════════════════════════╝
-
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -60,7 +53,6 @@ fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewMode
             contentPadding = PaddingValues(16.dp),
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            // ----- Formulário de nova categoria (só admin) -----
             if (isAdmin) item {
                 CardEscuro(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
@@ -118,7 +110,6 @@ fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewMode
                 TituloSecao("Todas (${viewModel.categorias.size})", modifier = Modifier.padding(top = 8.dp))
             }
 
-            // ----- Lista de categorias -----
             items(viewModel.categorias, key = { it.id }) { categoria ->
                 CardCategoria(
                     categoria = categoria,
@@ -141,7 +132,6 @@ private fun CardCategoria(
     categoria: Categoria,
     quantidadeProdutos: Int,
     onClick: () -> Unit,
-    // null = sem permissão (lixeira escondida)
     onRemover: (() -> Unit)?
 ) {
     CardEscuro(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {

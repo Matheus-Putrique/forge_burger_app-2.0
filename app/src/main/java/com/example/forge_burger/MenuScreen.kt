@@ -1,11 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  MenuScreen.kt                               ║
-// ║  ABA INÍCIO: cardápio (lista de Produtos)    ║
-// ║  Clique → detalhes · Segurar → remover (adm) ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
@@ -50,14 +44,11 @@ import com.example.forge_burger.ui.theme.formatarPreco
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
-    // null = "Todos"
     var categoriaSelecionada by rememberSaveable { mutableStateOf<Int?>(null) }
     var ordenarPorPreco by rememberSaveable { mutableStateOf(false) }
     var produtoParaRemover by remember { mutableStateOf<Produto?>(null) }
-    // Cadastro e remoção só aparecem para o Administrador
     val isAdmin = viewModel.isAdmin
 
-    // Se a categoria escolhida foi apagada, volta para "Todos"
     val categoriaAtual = categoriaSelecionada?.let { viewModel.buscarCategoria(it) }
 
     val produtosFiltrados = viewModel.produtos
@@ -82,8 +73,6 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 BarraBuscaFalsa(onClick = { navController.irParaAba(Rotas.BUSCA) })
                 Spacer(modifier = Modifier.height(16.dp))
 
-                // Chips de categoria (vêm da lista de Categorias)
-                // Quebram para a linha de baixo quando não cabem, assim nenhum fica cortado
                 FlowRow(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
@@ -138,7 +127,6 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 }
             }
 
-            // Grade de 2 colunas: cada linha da LazyColumn tem 2 cards
             items(produtosFiltrados.chunked(2)) { linha ->
                 Row(modifier = Modifier.fillMaxWidth()) {
                     linha.forEachIndexed { indice, produto ->
@@ -173,7 +161,6 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
         }
     }
 
-    // Confirmação antes de remover
     produtoParaRemover?.takeIf { isAdmin }?.let { produto ->
         AlertDialog(
             onDismissRequest = { produtoParaRemover = null },
@@ -243,7 +230,6 @@ private fun ChipCategoria(nome: String, ativo: Boolean, onClick: () -> Unit) {
 fun CardMenuBurger(
     produto: Produto,
     onClick: () -> Unit,
-    // null = sem permissão para remover (some a lixeira e o "segurar")
     onRemover: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
@@ -282,7 +268,6 @@ fun CardMenuBurger(
                     fontSize = 12.sp,
                     modifier = Modifier.weight(1f)
                 )
-                // Lixeira: remove o produto da lista (pede confirmação)
                 if (onRemover != null) {
                     IconButton(onClick = onRemover, modifier = Modifier.size(28.dp)) {
                         Icon(

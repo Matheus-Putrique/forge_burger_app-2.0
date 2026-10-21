@@ -1,14 +1,7 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  Modelos.kt                                  ║
-// ║  Data classes do app                         ║
-// ║  Categoria · Produto · ItemCarrinho · Pedido ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.annotation.DrawableRes
 
-// Lista 1: categorias do cardápio (Hambúrgueres, Bebidas...)
 data class Categoria(
     val id: Int,
     val nome: String,
@@ -16,7 +9,6 @@ data class Categoria(
     val descricao: String
 )
 
-// Lista 2: produtos do cardápio — cada produto pertence a uma Categoria
 data class Produto(
     val id: Int,
     val nome: String,
@@ -26,17 +18,14 @@ data class Produto(
     val emoji: String,
     val nota: Double = 5.0,
     val ingredientes: List<String> = emptyList(),
-    // Foto em res/drawable (null = mostra o emoji)
     @DrawableRes val foto: Int? = null
 )
 
-// Adicional que pode ser colocado no lanche na tela de personalização
 data class Adicional(
     val nome: String,
     val preco: Double
 )
 
-// Produto já personalizado, dentro do carrinho
 data class ItemCarrinho(
     val id: Int,
     val produto: Produto,
@@ -48,14 +37,12 @@ data class ItemCarrinho(
     val precoUnitario: Double get() = produto.preco + adicionais.sumOf { it.preco }
     val total: Double get() = precoUnitario * quantidade
 
-    // Texto curto que aparece embaixo do nome no carrinho
     val resumo: String
         get() = (listOf(pontoCarne) + adicionais.map { it.nome })
             .filter { it.isNotBlank() }
             .joinToString(", ")
 }
 
-// Pedido finalizado
 data class Pedido(
     val numero: Int,
     val itens: List<ItemCarrinho>,
@@ -67,7 +54,6 @@ data class Pedido(
     val total: Double get() = subtotal + taxaEntrega
 }
 
-// Perfil de quem está logado: ADMIN cadastra/remove, CLIENTE só compra
 enum class Perfil(val rotulo: String) {
     ADMIN("Administrador"),
     CLIENTE("Cliente")

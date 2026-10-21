@@ -1,10 +1,5 @@
 package com.example.forge_burger
 
-// ╔══════════════════════════════════════════════╗
-// ║  BuscaScreen.kt                              ║
-// ║  ABA BUSCAR: filtra produtos pelo nome       ║
-// ╚══════════════════════════════════════════════╝
-
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
@@ -82,7 +77,6 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
             verticalArrangement = Arrangement.spacedBy(12.dp)
         ) {
             if (texto.isBlank()) {
-                // Sem texto: atalhos para as categorias
                 item { TituloSecao("Navegue por categoria") }
                 items(viewModel.categorias, key = { it.id }) { categoria ->
                     CardEscuro(
