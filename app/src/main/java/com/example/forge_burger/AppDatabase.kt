@@ -5,7 +5,7 @@ import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
 
-@Database(entities = [Categoria::class, Produto::class], version = 1)
+@Database(entities = [Categoria::class, Produto::class], version = 2)
 abstract class AppDatabase : RoomDatabase() {
 
     abstract fun categoriaDAO(): CategoriaDAO
@@ -28,7 +28,8 @@ abstract class AppDatabase : RoomDatabase() {
                         context.applicationContext,
                         AppDatabase::class.java,
                         "app_database"
-                    ).build()
+                    ).fallbackToDestructiveMigration(dropAllTables = true)
+                        .build()
                     INSTANCE = instance
                     return instance
                 }

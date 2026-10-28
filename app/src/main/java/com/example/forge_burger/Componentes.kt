@@ -1,6 +1,5 @@
 package com.example.forge_burger
 
-import androidx.annotation.DrawableRes
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -104,16 +103,17 @@ fun FotoProduto(
     emoji: String,
     modifier: Modifier = Modifier,
     tamanhoEmoji: Int = 28,
-    @DrawableRes foto: Int? = null
+    foto: String? = null
 ) {
     Surface(
         shape = RoundedCornerShape(10.dp),
         color = CorCardClaro,
         modifier = modifier
     ) {
-        if (foto != null) {
+        val fotoId = fotoDoProduto(foto)
+        if (fotoId != null) {
             Image(
-                painter = painterResource(foto),
+                painter = painterResource(fotoId),
                 contentDescription = null,
                 contentScale = ContentScale.Crop,
                 modifier = Modifier.fillMaxSize()

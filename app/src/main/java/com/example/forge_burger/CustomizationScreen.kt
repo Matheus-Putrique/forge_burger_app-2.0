@@ -127,9 +127,10 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                     .background(Color(40, 30, 25)),
                 contentAlignment = Alignment.Center
             ) {
-                if (produto.foto != null) {
+                val fotoId = fotoDoProduto(produto.foto)
+                if (fotoId != null) {
                     Image(
-                        painter = painterResource(produto.foto),
+                        painter = painterResource(fotoId),
                         contentDescription = produto.nome,
                         contentScale = ContentScale.Crop,
                         modifier = Modifier.fillMaxSize()
