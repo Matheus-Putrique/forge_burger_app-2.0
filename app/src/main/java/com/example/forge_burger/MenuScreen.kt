@@ -7,11 +7,11 @@ import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.AlertDialog
@@ -26,6 +26,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
@@ -40,10 +41,28 @@ import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val produtoDAO = db.produtoDAO()
+    val categoriaDAO = db.categoriaDAO()
+
+    // Carrega categorias e produtos do banco Room ao entrar na tela
+    LaunchedEffect(Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val cats = carregarCategoriasDoBanco(categoriaDAO)
+            val prods = carregarProdutosDoBanco(produtoDAO)
+            viewModel.atualizarListaCategorias(cats)
+            viewModel.atualizarListaProdutos(prods)
+        }
+    }
+
     var categoriaSelecionada by rememberSaveable { mutableStateOf<Int?>(null) }
     var ordenarPorPreco by rememberSaveable { mutableStateOf(false) }
     var produtoParaRemover by remember { mutableStateOf<Produto?>(null) }
@@ -109,7 +128,7 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                 }
                 Text(
-                    text = if (isAdmin) "Toque para personalizar • 🗑 ou segure para remover"
+                    text = if (isAdmin) "Toque para personalizar • ✏️ para editar • 🗑 para remover"
                     else "Toque para personalizar e adicionar ao carrinho",
                     color = CorTextoCinza,
                     fontSize = 12.sp
@@ -134,6 +153,10 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                         CardMenuBurger(
                             produto = produto,
                             onClick = { navController.navigate(Rotas.produto(produto.id)) },
+                            onEditar = if (isAdmin) ({
+                                viewModel.prepararEdicaoProduto(produto)
+                                navController.navigate(Rotas.novoProduto(produto.categoriaId))
+                            }) else null,
                             onRemover = if (isAdmin) ({ produtoParaRemover = produto }) else null,
                             modifier = Modifier.weight(1f)
                         )
@@ -149,7 +172,10 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
 
         if (isAdmin) {
             ExtendedFloatingActionButton(
-                onClick = { navController.navigate(Rotas.novoProduto(categoriaAtual?.id)) },
+                onClick = {
+                    viewModel.limparEdicaoProduto()
+                    navController.navigate(Rotas.novoProduto(categoriaAtual?.id))
+                },
                 containerColor = CorLaranja,
                 contentColor = Color.Black,
                 icon = { Icon(Icons.Default.Add, contentDescription = null) },
@@ -168,7 +194,11 @@ fun MenuScreen(navController: NavHostController, viewModel: BurgerViewModel) {
             text = { Text("\"${produto.nome}\" será removido do cardápio.") },
             confirmButton = {
                 TextButton(onClick = {
-                    viewModel.removerProduto(produto)
+                    CoroutineScope(Dispatchers.IO).launch {
+                        deletarProduto(produto, produtoDAO)
+                        val listaAtualizada = buscarProdutos(produtoDAO)
+                        viewModel.atualizarListaProdutos(listaAtualizada)
+                    }
                     produtoParaRemover = null
                 }) { Text("Remover", color = CorLaranja) }
             },
@@ -230,6 +260,7 @@ private fun ChipCategoria(nome: String, ativo: Boolean, onClick: () -> Unit) {
 fun CardMenuBurger(
     produto: Produto,
     onClick: () -> Unit,
+    onEditar: (() -> Unit)? = null,
     onRemover: (() -> Unit)?,
     modifier: Modifier = Modifier
 ) {
@@ -268,6 +299,16 @@ fun CardMenuBurger(
                     fontSize = 12.sp,
                     modifier = Modifier.weight(1f)
                 )
+                if (onEditar != null) {
+                    IconButton(onClick = onEditar, modifier = Modifier.size(28.dp)) {
+                        Icon(
+                            Icons.Default.Edit,
+                            contentDescription = "Editar",
+                            tint = CorLaranja,
+                            modifier = Modifier.size(18.dp)
+                        )
+                    }
+                }
                 if (onRemover != null) {
                     IconButton(onClick = onRemover, modifier = Modifier.size(28.dp)) {
                         Icon(

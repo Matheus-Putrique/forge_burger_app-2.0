@@ -9,11 +9,11 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -30,15 +30,34 @@ import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.ForgeBurgerTheme
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val categoriaDAO = db.categoriaDAO()
+    val produtoDAO = db.produtoDAO()
     val isAdmin = viewModel.isAdmin
 
-    var nome by rememberSaveable { mutableStateOf("") }
-    var emoji by rememberSaveable { mutableStateOf("") }
-    var descricao by rememberSaveable { mutableStateOf("") }
+    var estouEditando by remember { mutableStateOf(false) }
+    var categoriaEmEdicao by remember { mutableStateOf<Categoria?>(null) }
+
+    var nome by remember { mutableStateOf("") }
+    var emoji by remember { mutableStateOf("") }
+    var descricao by remember { mutableStateOf("") }
+
+    // Carrega categorias e produtos do banco ao abrir a tela
+    LaunchedEffect(Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val cats = carregarCategoriasDoBanco(categoriaDAO)
+            val prods = carregarProdutosDoBanco(produtoDAO)
+            viewModel.atualizarListaCategorias(cats)
+            viewModel.atualizarListaProdutos(prods)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -56,7 +75,12 @@ fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewMode
             if (isAdmin) item {
                 CardEscuro(modifier = Modifier.fillMaxWidth()) {
                     Column(modifier = Modifier.padding(16.dp)) {
-                        Text("Nova categoria", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
+                        Text(
+                            text = if (estouEditando) "Editar categoria" else "Nova categoria",
+                            color = Color.White,
+                            fontWeight = FontWeight.Bold,
+                            fontSize = 16.sp
+                        )
                         Spacer(Modifier.height(12.dp))
                         Row {
                             OutlinedTextField(
@@ -92,13 +116,31 @@ fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewMode
                         )
                         Spacer(Modifier.height(12.dp))
                         BotaoLaranja(
-                            texto = "Adicionar categoria",
+                            texto = if (estouEditando) "Atualizar categoria" else "Adicionar categoria",
                             habilitado = nome.isNotBlank(),
                             onClick = {
-                                viewModel.adicionarCategoria(nome, emoji, descricao)
-                                nome = ""
-                                emoji = ""
-                                descricao = ""
+                                CoroutineScope(Dispatchers.IO).launch {
+                                    if (estouEditando && categoriaEmEdicao != null) {
+                                        val catTemp = categoriaEmEdicao!!.copy(
+                                            nome = nome.trim(),
+                                            emoji = emoji.ifBlank { "🍽️" },
+                                            descricao = descricao.trim()
+                                        )
+                                        atualizarCategoria(catTemp, categoriaDAO)
+                                        estouEditando = false
+                                    } else {
+                                        inserirCategoria(
+                                            Categoria(0, nome.trim(), emoji.ifBlank { "🍽️" }, descricao.trim()),
+                                            categoriaDAO
+                                        )
+                                    }
+                                    nome = ""
+                                    emoji = ""
+                                    descricao = ""
+                                    categoriaEmEdicao = null
+                                    val atualizadas = buscarCategorias(categoriaDAO)
+                                    viewModel.atualizarListaCategorias(atualizadas)
+                                }
                             },
                             modifier = Modifier.fillMaxWidth()
                         )
@@ -115,11 +157,28 @@ fun CategoriasScreen(navController: NavHostController, viewModel: BurgerViewMode
                     categoria = categoria,
                     quantidadeProdutos = viewModel.produtosDaCategoria(categoria.id).size,
                     onClick = { navController.navigate(Rotas.categoria(categoria.id)) },
+                    onAtualizar = if (isAdmin) ({
+                        nome = categoria.nome
+                        emoji = categoria.emoji
+                        descricao = categoria.descricao
+                        estouEditando = true
+                        categoriaEmEdicao = categoria
+                    }) else null,
                     onRemover = if (isAdmin) ({
-                        val removeu = viewModel.removerCategoria(categoria)
-                        val msg = if (removeu) "Categoria removida"
-                        else "Remova os produtos de \"${categoria.nome}\" antes"
-                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                        if (viewModel.produtosDaCategoria(categoria.id).isNotEmpty()) {
+                            Toast.makeText(
+                                context,
+                                "Remova os produtos de \"${categoria.nome}\" antes",
+                                Toast.LENGTH_SHORT
+                            ).show()
+                        } else {
+                            CoroutineScope(Dispatchers.IO).launch {
+                                deletarCategoria(categoria, categoriaDAO)
+                                val atualizadas = buscarCategorias(categoriaDAO)
+                                viewModel.atualizarListaCategorias(atualizadas)
+                            }
+                            Toast.makeText(context, "Categoria removida", Toast.LENGTH_SHORT).show()
+                        }
                     }) else null
                 )
             }
@@ -132,6 +191,7 @@ private fun CardCategoria(
     categoria: Categoria,
     quantidadeProdutos: Int,
     onClick: () -> Unit,
+    onAtualizar: (() -> Unit)? = null,
     onRemover: (() -> Unit)?
 ) {
     CardEscuro(modifier = Modifier.fillMaxWidth().clickable(onClick = onClick)) {
@@ -150,6 +210,11 @@ private fun CardCategoria(
                 )
                 if (categoria.descricao.isNotBlank()) {
                     Text(categoria.descricao, color = CorTextoCinza, fontSize = 12.sp, maxLines = 1)
+                }
+            }
+            if (onAtualizar != null) {
+                IconButton(onClick = onAtualizar) {
+                    Icon(Icons.Default.Edit, contentDescription = "Editar", tint = CorLaranja)
                 }
             }
             if (onRemover != null) {

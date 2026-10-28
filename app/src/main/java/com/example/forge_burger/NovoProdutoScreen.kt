@@ -13,6 +13,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
@@ -27,18 +28,39 @@ import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
 fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewModel, categoriaInicial: Int = -1) {
-    var emoji by remember { mutableStateOf("") }
-    var nome by remember { mutableStateOf("") }
-    var descricao by remember { mutableStateOf("") }
-    var precoTexto by remember { mutableStateOf("") }
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val produtoDAO = db.produtoDAO()
+    val categoriaDAO = db.categoriaDAO()
+
+    val estouEditando = viewModel.estouEditandoProduto
+    val produtoEmEdicao = viewModel.produtoEmEdicao
+
+    var emoji by remember { mutableStateOf(produtoEmEdicao?.emoji ?: "") }
+    var nome by remember { mutableStateOf(produtoEmEdicao?.nome ?: "") }
+    var descricao by remember { mutableStateOf(produtoEmEdicao?.descricao ?: "") }
+    var precoTexto by remember { mutableStateOf(produtoEmEdicao?.preco?.toString() ?: "") }
     var categoriaId by remember {
         mutableIntStateOf(
-            viewModel.buscarCategoria(categoriaInicial)?.id ?: viewModel.categorias.firstOrNull()?.id ?: -1
+            produtoEmEdicao?.categoriaId
+                ?: viewModel.buscarCategoria(categoriaInicial)?.id
+                ?: viewModel.categorias.firstOrNull()?.id
+                ?: 1
         )
+    }
+
+    LaunchedEffect(Unit) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val cats = carregarCategoriasDoBanco(categoriaDAO)
+            viewModel.atualizarListaCategorias(cats)
+        }
     }
 
     val preco = precoTexto.replace(',', '.').toDoubleOrNull()
@@ -51,7 +73,13 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
             .background(CorFundo)
             .imePadding()
     ) {
-        BarraTopo("Novo produto", onVoltar = { navController.popBackStack() })
+        BarraTopo(
+            titulo = if (estouEditando) "Editar produto" else "Novo produto",
+            onVoltar = {
+                viewModel.limparEdicaoProduto()
+                navController.popBackStack()
+            }
+        )
 
         Column(
             modifier = Modifier
@@ -60,7 +88,12 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
                 .padding(16.dp)
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
-                FotoProduto(emoji.ifBlank { "🍔" }, tamanhoEmoji = 40, modifier = Modifier.size(84.dp))
+                FotoProduto(
+                    emoji = emoji.ifBlank { "🍔" },
+                    foto = produtoEmEdicao?.foto,
+                    tamanhoEmoji = 40,
+                    modifier = Modifier.size(84.dp)
+                )
                 Spacer(Modifier.width(16.dp))
                 Column {
                     Text(nome.ifBlank { "Nome do produto" }, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
@@ -155,10 +188,34 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
         }
 
         BotaoLaranja(
-            texto = "Salvar produto",
+            texto = if (estouEditando) "Atualizar produto" else "Salvar produto",
             habilitado = podeSalvar,
             onClick = {
-                viewModel.adicionarProduto(nome, descricao, preco ?: 0.0, categoriaId, emoji)
+                CoroutineScope(Dispatchers.IO).launch {
+                    if (estouEditando && produtoEmEdicao != null) {
+                        val produtoTemp = produtoEmEdicao.copy(
+                            nome = nome.trim(),
+                            descricao = descricao.trim(),
+                            preco = preco ?: 0.0,
+                            categoriaId = categoriaId,
+                            emoji = emoji.ifBlank { "🍔" }
+                        )
+                        atualizarProduto(produtoTemp, produtoDAO)
+                        viewModel.limparEdicaoProduto()
+                    } else {
+                        val novoProd = Produto(
+                            id = 0,
+                            nome = nome.trim(),
+                            descricao = descricao.trim(),
+                            preco = preco ?: 0.0,
+                            categoriaId = categoriaId,
+                            emoji = emoji.ifBlank { "🍔" }
+                        )
+                        inserirProduto(novoProd, produtoDAO)
+                    }
+                    val listaAtualizada = buscarProdutos(produtoDAO)
+                    viewModel.atualizarListaProdutos(listaAtualizada)
+                }
                 navController.popBackStack()
             },
             modifier = Modifier

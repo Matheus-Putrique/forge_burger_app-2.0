@@ -6,10 +6,11 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
-import androidx.compose.runtime.Composable
+import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
@@ -23,10 +24,27 @@ import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerViewModel, categoriaId: Int) {
-    val categoria = viewModel.buscarCategoria(categoriaId)
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val categoriaDAO = db.categoriaDAO()
+    val produtoDAO = db.produtoDAO()
+
+    var categoria by remember { mutableStateOf<Categoria?>(viewModel.buscarCategoria(categoriaId)) }
+    var produtos by remember { mutableStateOf<List<Produto>>(viewModel.produtosDaCategoria(categoriaId)) }
+
+    // Requisito 3.3: busca a categoria e os produtos diretamente no banco pelo ID recebido por navegação
+    LaunchedEffect(categoriaId) {
+        CoroutineScope(Dispatchers.IO).launch {
+            categoria = buscarCategoriaPorId(categoriaId, categoriaDAO)
+            produtos = buscarProdutosPorCategoria(categoriaId, produtoDAO)
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -35,12 +53,11 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
     ) {
         BarraTopo(categoria?.nome ?: "Categoria", onVoltar = { navController.popBackStack() })
 
-        if (categoria == null) {
+        val catAtual = categoria
+        if (catAtual == null) {
             EstadoVazio("🤷", "Categoria não encontrada", "Ela pode ter sido removida.")
             return@Column
         }
-
-        val produtos = viewModel.produtosDaCategoria(categoria.id)
 
         LazyColumn(
             modifier = Modifier.weight(1f),
@@ -52,12 +69,12 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
-                    FotoProduto(categoria.emoji, tamanhoEmoji = 56, modifier = Modifier.size(110.dp))
+                    FotoProduto(catAtual.emoji, tamanhoEmoji = 56, modifier = Modifier.size(110.dp))
                     Spacer(Modifier.height(12.dp))
-                    Text(categoria.nome, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
-                    if (categoria.descricao.isNotBlank()) {
+                    Text(catAtual.nome, color = Color.White, fontSize = 22.sp, fontWeight = FontWeight.Bold)
+                    if (catAtual.descricao.isNotBlank()) {
                         Spacer(Modifier.height(4.dp))
-                        Text(categoria.descricao, color = CorTextoCinza, fontSize = 14.sp, textAlign = TextAlign.Center)
+                        Text(catAtual.descricao, color = CorTextoCinza, fontSize = 14.sp, textAlign = TextAlign.Center)
                     }
                 }
             }
@@ -85,7 +102,7 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
             if (produtos.isEmpty()) {
                 item {
                     Text(
-                        if (viewModel.isAdmin) "Nenhum produto ainda. Cadastre um pelo botão \"Novo lanche\" no cardápio."
+                        if (viewModel.isAdmin) "Nenhum produto ainda. Cadastre um pelo botão \"Novo produto\" abaixo."
                         else "Nenhum produto nesta categoria por enquanto.",
                         color = CorTextoCinza,
                         fontSize = 14.sp
@@ -116,7 +133,10 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
                 Spacer(Modifier.height(8.dp))
                 BotaoLaranja(
                     texto = "Novo produto",
-                    onClick = { navController.navigate(Rotas.novoProduto(categoria.id)) },
+                    onClick = {
+                        viewModel.limparEdicaoProduto()
+                        navController.navigate(Rotas.novoProduto(catAtual.id))
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }

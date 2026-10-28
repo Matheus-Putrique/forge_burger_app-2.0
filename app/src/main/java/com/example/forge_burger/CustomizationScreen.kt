@@ -27,6 +27,7 @@ import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
@@ -37,17 +38,37 @@ import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
 import androidx.navigation.compose.rememberNavController
 import com.example.forge_burger.ui.theme.CorCard
-import com.example.forge_burger.ui.theme.CorCardClaro
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 
 @Composable
 fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewModel, produtoId: Int) {
-    val produto = viewModel.buscarProduto(produtoId)
+    val context = LocalContext.current
+    val db = AppDatabase.getDatabase(context)
+    val produtoDAO = db.produtoDAO()
+    val categoriaDAO = db.categoriaDAO()
 
+    var produtoState by remember { mutableStateOf<Produto?>(viewModel.buscarProduto(produtoId)) }
+    var categoriaState by remember { mutableStateOf<Categoria?>(null) }
+
+    // Requisito 3.3: busca o produto diretamente no banco a partir do ID recebido por navegação
+    LaunchedEffect(produtoId) {
+        CoroutineScope(Dispatchers.IO).launch {
+            val prod = buscarProdutoPorId(produtoId, produtoDAO)
+            produtoState = prod
+            if (prod != null) {
+                categoriaState = buscarCategoriaPorId(prod.categoriaId, categoriaDAO)
+            }
+        }
+    }
+
+    val produto = produtoState
     if (produto == null) {
         Column(Modifier.fillMaxSize().background(CorFundo)) {
             BarraTopo("Produto", onVoltar = { navController.popBackStack() })
@@ -56,7 +77,7 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
         return
     }
 
-    val categoria = viewModel.buscarCategoria(produto.categoriaId)
+    val categoria = categoriaState ?: viewModel.buscarCategoria(produto.categoriaId)
     val ehLanche = produto.categoriaId == 1
 
     var quantidade by rememberSaveable { mutableIntStateOf(1) }
@@ -164,7 +185,7 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                     lineHeight = 20.sp
                 )
 
-                if (produto.ingredientes.isNotEmpty()) {
+                if (produto.ingredientes.isNotBlank()) {
                     Spacer(modifier = Modifier.height(24.dp))
                     CardEscuro(modifier = Modifier.fillMaxWidth()) {
                         Column(modifier = Modifier.padding(16.dp)) {
@@ -176,7 +197,7 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                             )
                             Spacer(modifier = Modifier.height(8.dp))
                             Text(
-                                text = produto.ingredientes.joinToString("\n") { "• $it" },
+                                text = produto.ingredientes,
                                 color = CorTextoCinza,
                                 fontSize = 13.sp,
                                 lineHeight = 18.sp
