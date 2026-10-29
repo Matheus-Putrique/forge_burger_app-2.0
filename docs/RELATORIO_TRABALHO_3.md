@@ -74,6 +74,7 @@ Passo a passo do teste:
 5. O mesmo vale para editar e remover: as mudanças continuam depois de reabrir.
 
 ✏️ **Vídeo do teste:** <!-- link do vídeo (YouTube não listado / Google Drive) ou docs/videos/persistencia.mp4 -->
+https://drive.google.com/file/d/1DeZ5VlgW6PljNkUV2wE0G8dovbBIZePq/view?usp=sharing
 
 ✏️ **Prints:**
 
