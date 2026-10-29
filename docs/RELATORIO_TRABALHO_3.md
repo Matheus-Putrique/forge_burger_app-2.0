@@ -88,4 +88,4 @@ https://drive.google.com/file/d/1DeZ5VlgW6PljNkUV2wE0G8dovbBIZePq/view?usp=shari
 
 ### 6. Algum integrante teve dificuldade? Como resolveram?
 
-✏️ (Resposta do trio, com as palavras de vocês.)
+Acredito que a alteração de listas arrayLists para listas de banco de dados, gerando um pouco de confusão na hora de entender o código ou procurar algum erro, utilizei auxílio do gemini e tutorias 
