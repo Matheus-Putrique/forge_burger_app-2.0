@@ -1,7 +1,19 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,63 +21,39 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.forge_burger.ui.theme.CorCard
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
-import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.example.forge_burger.viewmodel.CategoriaViewModel
+import com.example.forge_burger.viewmodel.ProdutoViewModel
 
 @OptIn(ExperimentalLayoutApi::class)
 @Composable
-fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewModel, categoriaInicial: Int = -1) {
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val produtoDAO = db.produtoDAO()
-    val categoriaDAO = db.categoriaDAO()
+fun NovoProdutoScreen(
+    navController: NavHostController,
+    produtoViewModel: ProdutoViewModel,
+    categoriaViewModel: CategoriaViewModel
+) {
+    val estadoProduto by produtoViewModel.uiState.collectAsState()
+    val estadoCategoria by categoriaViewModel.uiState.collectAsState()
 
-    val estouEditando = viewModel.estouEditandoProduto
-    val produtoEmEdicao = viewModel.produtoEmEdicao
-
-    var emoji by remember { mutableStateOf(produtoEmEdicao?.emoji ?: "") }
-    var nome by remember { mutableStateOf(produtoEmEdicao?.nome ?: "") }
-    var descricao by remember { mutableStateOf(produtoEmEdicao?.descricao ?: "") }
-    var precoTexto by remember { mutableStateOf(produtoEmEdicao?.preco?.toString() ?: "") }
-    var categoriaId by remember {
-        mutableIntStateOf(
-            produtoEmEdicao?.categoriaId
-                ?: viewModel.buscarCategoria(categoriaInicial)?.id
-                ?: viewModel.categorias.firstOrNull()?.id
-                ?: 1
-        )
-    }
-
-    LaunchedEffect(Unit) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val cats = carregarCategoriasDoBanco(categoriaDAO)
-            viewModel.atualizarListaCategorias(cats)
-        }
-    }
-
-    val preco = precoTexto.replace(',', '.').toDoubleOrNull()
-    val precoInvalido = precoTexto.isNotBlank() && (preco == null || preco <= 0)
-    val podeSalvar = nome.isNotBlank() && preco != null && preco > 0 && viewModel.buscarCategoria(categoriaId) != null
+    val preco = estadoProduto.precoCampo.replace(',', '.').toDoubleOrNull()
+    val precoInvalido = estadoProduto.precoCampo.isNotBlank() && (preco == null || preco <= 0)
+    val categoriaExiste = estadoCategoria.listaCategorias.any { it.id == estadoProduto.categoriaIdEscolhida }
+    val podeSalvar = estadoProduto.nomeCampo.isNotBlank() && preco != null && preco > 0 && categoriaExiste
 
     Column(
         modifier = Modifier
@@ -74,9 +62,9 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
             .imePadding()
     ) {
         BarraTopo(
-            titulo = if (estouEditando) "Editar produto" else "Novo produto",
+            titulo = if (estadoProduto.estouEditando) "Editar produto" else "Novo produto",
             onVoltar = {
-                viewModel.limparEdicaoProduto()
+                produtoViewModel.limparEdicaoProduto()
                 navController.popBackStack()
             }
         )
@@ -89,14 +77,19 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
         ) {
             Row(verticalAlignment = Alignment.CenterVertically) {
                 FotoProduto(
-                    emoji = emoji.ifBlank { "🍔" },
-                    foto = produtoEmEdicao?.foto,
+                    emoji = estadoProduto.emojiCampo.ifBlank { "🍔" },
+                    foto = estadoProduto.produtoEmEdicao?.foto,
                     tamanhoEmoji = 40,
                     modifier = Modifier.size(84.dp)
                 )
                 Spacer(Modifier.width(16.dp))
                 Column {
-                    Text(nome.ifBlank { "Nome do produto" }, color = Color.White, fontSize = 18.sp, fontWeight = FontWeight.Bold)
+                    Text(
+                        estadoProduto.nomeCampo.ifBlank { "Nome do produto" },
+                        color = Color.White,
+                        fontSize = 18.sp,
+                        fontWeight = FontWeight.Bold
+                    )
                     Text(
                         text = if (preco != null && preco > 0) formatarPreco(preco) else "R$ --",
                         color = CorLaranja,
@@ -110,8 +103,8 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
 
             Row {
                 OutlinedTextField(
-                    value = emoji,
-                    onValueChange = { if (it.length <= 2) emoji = it },
+                    value = estadoProduto.emojiCampo,
+                    onValueChange = { produtoViewModel.mudarEmoji(it) },
                     label = { Text("Ícone") },
                     placeholder = { Text("🍔") },
                     singleLine = true,
@@ -121,8 +114,8 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
                 )
                 Spacer(Modifier.width(8.dp))
                 OutlinedTextField(
-                    value = nome,
-                    onValueChange = { nome = it },
+                    value = estadoProduto.nomeCampo,
+                    onValueChange = { produtoViewModel.mudarNome(it) },
                     label = { Text("Nome *") },
                     singleLine = true,
                     shape = RoundedCornerShape(12.dp),
@@ -134,8 +127,8 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
             Spacer(Modifier.height(12.dp))
 
             OutlinedTextField(
-                value = precoTexto,
-                onValueChange = { precoTexto = it.filter { c -> c.isDigit() || c == ',' || c == '.' } },
+                value = estadoProduto.precoCampo,
+                onValueChange = { produtoViewModel.mudarPreco(it) },
                 label = { Text("Preço (R$) *") },
                 placeholder = { Text("12,90") },
                 singleLine = true,
@@ -150,8 +143,8 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
             Spacer(Modifier.height(4.dp))
 
             OutlinedTextField(
-                value = descricao,
-                onValueChange = { descricao = it },
+                value = estadoProduto.descricaoCampo,
+                onValueChange = { produtoViewModel.mudarDescricao(it) },
                 label = { Text("Descrição") },
                 minLines = 3,
                 shape = RoundedCornerShape(12.dp),
@@ -167,10 +160,10 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
                 modifier = Modifier.fillMaxWidth(),
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                viewModel.categorias.forEach { categoria ->
-                    val ativo = categoria.id == categoriaId
+                estadoCategoria.listaCategorias.forEach { categoria ->
+                    val ativo = categoria.id == estadoProduto.categoriaIdEscolhida
                     Surface(
-                        onClick = { categoriaId = categoria.id },
+                        onClick = { produtoViewModel.escolherCategoriaFormulario(categoria.id) },
                         shape = RoundedCornerShape(20.dp),
                         color = if (ativo) CorLaranja else CorCard,
                         modifier = Modifier.padding(end = 8.dp)
@@ -188,47 +181,15 @@ fun NovoProdutoScreen(navController: NavHostController, viewModel: BurgerViewMod
         }
 
         BotaoLaranja(
-            texto = if (estouEditando) "Atualizar produto" else "Salvar produto",
+            texto = if (estadoProduto.estouEditando) "Atualizar produto" else "Salvar produto",
             habilitado = podeSalvar,
             onClick = {
-                CoroutineScope(Dispatchers.IO).launch {
-                    if (estouEditando && produtoEmEdicao != null) {
-                        val produtoTemp = produtoEmEdicao.copy(
-                            nome = nome.trim(),
-                            descricao = descricao.trim(),
-                            preco = preco ?: 0.0,
-                            categoriaId = categoriaId,
-                            emoji = emoji.ifBlank { "🍔" }
-                        )
-                        atualizarProduto(produtoTemp, produtoDAO)
-                        viewModel.limparEdicaoProduto()
-                    } else {
-                        val novoProd = Produto(
-                            id = 0,
-                            nome = nome.trim(),
-                            descricao = descricao.trim(),
-                            preco = preco ?: 0.0,
-                            categoriaId = categoriaId,
-                            emoji = emoji.ifBlank { "🍔" }
-                        )
-                        inserirProduto(novoProd, produtoDAO)
-                    }
-                    val listaAtualizada = buscarProdutos(produtoDAO)
-                    viewModel.atualizarListaProdutos(listaAtualizada)
-                }
+                produtoViewModel.salvarProduto()
                 navController.popBackStack()
             },
             modifier = Modifier
                 .fillMaxWidth()
                 .padding(16.dp)
         )
-    }
-}
-
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun NovoProdutoScreenPreview() {
-    ForgeBurgerTheme {
-        NovoProdutoScreen(rememberNavController(), viewModel())
     }
 }

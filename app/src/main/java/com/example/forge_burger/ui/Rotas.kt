@@ -1,4 +1,4 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 object Rotas {
     const val LOGIN = "login"

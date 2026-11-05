@@ -1,12 +1,21 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.selection.selectable
-import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.LocationOn
@@ -16,32 +25,29 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Text
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextOverflow
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.forge_burger.data.ItemCarrinho
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
-import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
-
-private val formasPagamento = listOf("Pix", "Cartão na entrega", "Dinheiro")
+import com.example.forge_burger.viewmodel.BurgerViewModel
 
 @Composable
 fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
-    var pagamento by rememberSaveable { mutableStateOf(formasPagamento[0]) }
+    val uiState by viewModel.uiState.collectAsState()
 
-    val subtotal = viewModel.subtotalCarrinho()
+    val subtotal = uiState.carrinho.sumOf { it.total }
     val totalGeral = subtotal + viewModel.taxaEntrega
 
     Column(
@@ -55,7 +61,7 @@ fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
             modifier = Modifier.padding(horizontal = 12.dp)
         )
 
-        if (viewModel.carrinho.isEmpty()) {
+        if (uiState.carrinho.isEmpty()) {
             EstadoVazio(
                 emoji = "🛍️",
                 titulo = "Seu carrinho está vazio",
@@ -87,12 +93,12 @@ fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 )
             }
 
-            items(viewModel.carrinho, key = { it.id }) { item ->
+            items(uiState.carrinho, key = { it.id }) { item ->
                 CardItemDoPedido(
                     item = item,
                     onClick = { navController.navigate(Rotas.produto(item.produto.id)) },
-                    aoDiminuir = { viewModel.alterarQuantidade(item, item.quantidade - 1) },
-                    aoAumentar = { viewModel.alterarQuantidade(item, item.quantidade + 1) },
+                    aoDiminuir = { viewModel.alterarQuantidadeCarrinho(item, item.quantidade - 1) },
+                    aoAumentar = { viewModel.alterarQuantidadeCarrinho(item, item.quantidade + 1) },
                     aoRemover = { viewModel.removerDoCarrinho(item) }
                 )
             }
@@ -107,7 +113,7 @@ fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                         Spacer(Modifier.width(8.dp))
                         Column(Modifier.weight(1f)) {
                             Text("Entregar em", color = CorTextoCinza, fontSize = 12.sp)
-                            Text(viewModel.endereco.ifBlank { "Cadastre um endereço" }, color = Color.White, fontSize = 14.sp)
+                            Text(uiState.endereco.ifBlank { "Cadastre um endereço" }, color = Color.White, fontSize = 14.sp)
                         }
                         Text(
                             "Alterar",
@@ -124,16 +130,19 @@ fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
 
             item {
                 TituloSecao("Pagamento")
-                formasPagamento.forEach { forma ->
+                viewModel.formasPagamento.forEach { forma ->
                     Row(
                         modifier = Modifier
                             .fillMaxWidth()
-                            .selectable(selected = pagamento == forma, onClick = { pagamento = forma }),
+                            .selectable(
+                                selected = uiState.formaPagamentoEscolhida == forma,
+                                onClick = { viewModel.escolherFormaPagamento(forma) }
+                            ),
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         RadioButton(
-                            selected = pagamento == forma,
-                            onClick = { pagamento = forma },
+                            selected = uiState.formaPagamentoEscolhida == forma,
+                            onClick = { viewModel.escolherFormaPagamento(forma) },
                             colors = RadioButtonDefaults.colors(selectedColor = CorLaranja)
                         )
                         Text(forma, color = Color.White, fontSize = 14.sp)
@@ -154,9 +163,9 @@ fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
 
         BotaoLaranja(
             texto = "Finalizar Pedido",
-            habilitado = viewModel.endereco.isNotBlank(),
+            habilitado = uiState.endereco.isNotBlank(),
             onClick = {
-                val numero = viewModel.finalizarPedido(pagamento)
+                val numero = viewModel.finalizarPedido()
                 navController.navigate(Rotas.pedido(numero))
             },
             modifier = Modifier
@@ -213,13 +222,5 @@ fun CardItemDoPedido(
                 Icon(Icons.Default.Delete, contentDescription = "Remover", tint = CorTextoCinza)
             }
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun CartScreenPreview() {
-    ForgeBurgerTheme {
-        CartScreen(rememberNavController(), viewModel())
     }
 }

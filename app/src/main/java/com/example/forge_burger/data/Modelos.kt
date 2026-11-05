@@ -1,7 +1,8 @@
-package com.example.forge_burger
+package com.example.forge_burger.data
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import com.example.forge_burger.R
 
 @Entity(tableName = "categorias")
 data class Categoria(

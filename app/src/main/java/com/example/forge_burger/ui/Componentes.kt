@@ -1,4 +1,4 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.layout.Box
@@ -38,6 +38,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import com.example.forge_burger.data.fotoDoProduto
 import com.example.forge_burger.ui.theme.CorCard
 import com.example.forge_burger.ui.theme.CorCardClaro
 import com.example.forge_burger.ui.theme.CorFundo

@@ -1,12 +1,24 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
@@ -18,10 +30,12 @@ import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
 import com.example.forge_burger.ui.theme.formatarPreco
+import com.example.forge_burger.viewmodel.BurgerViewModel
 
 @Composable
 fun PedidoScreen(navController: NavHostController, viewModel: BurgerViewModel, numero: Int) {
-    val pedido = viewModel.buscarPedido(numero)
+    val uiState by viewModel.uiState.collectAsState()
+    val pedido = uiState.pedidos.find { it.numero == numero }
 
     Column(
         modifier = Modifier

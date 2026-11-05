@@ -1,9 +1,18 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.selection.selectable
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -20,55 +29,46 @@ import androidx.compose.material3.RadioButton
 import androidx.compose.material3.RadioButtonDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.toMutableStateList
-import androidx.compose.runtime.saveable.listSaver
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.layout.ContentScale
-import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.layout.ContentScale
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.forge_burger.data.fotoDoProduto
 import com.example.forge_burger.ui.theme.CorCard
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
-import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.example.forge_burger.viewmodel.BurgerViewModel
+import com.example.forge_burger.viewmodel.CategoriaViewModel
+import com.example.forge_burger.viewmodel.ProdutoViewModel
 
 @Composable
-fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewModel, produtoId: Int) {
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val produtoDAO = db.produtoDAO()
-    val categoriaDAO = db.categoriaDAO()
+fun CustomizationScreen(
+    navController: NavHostController,
+    produtoViewModel: ProdutoViewModel,
+    categoriaViewModel: CategoriaViewModel,
+    burgerViewModel: BurgerViewModel,
+    produtoId: Int
+) {
+    val estadoProduto by produtoViewModel.uiState.collectAsState()
+    val estadoCategoria by categoriaViewModel.uiState.collectAsState()
+    val estadoBurger by burgerViewModel.uiState.collectAsState()
 
-    var produtoState by remember { mutableStateOf<Produto?>(viewModel.buscarProduto(produtoId)) }
-    var categoriaState by remember { mutableStateOf<Categoria?>(null) }
-
-    // Requisito 3.3: busca o produto diretamente no banco a partir do ID recebido por navegação
     LaunchedEffect(produtoId) {
-        CoroutineScope(Dispatchers.IO).launch {
-            val prod = buscarProdutoPorId(produtoId, produtoDAO)
-            produtoState = prod
-            if (prod != null) {
-                categoriaState = buscarCategoriaPorId(prod.categoriaId, categoriaDAO)
-            }
-        }
+        produtoViewModel.abrirDetalhesProduto(produtoId)
     }
 
-    val produto = produtoState
+    val produto = estadoProduto.produtoDetalhe
     if (produto == null) {
         Column(Modifier.fillMaxSize().background(CorFundo)) {
             BarraTopo("Produto", onVoltar = { navController.popBackStack() })
@@ -77,23 +77,12 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
         return
     }
 
-    val categoria = categoriaState ?: viewModel.buscarCategoria(produto.categoriaId)
+    val categoria = estadoCategoria.listaCategorias.find { it.id == produto.categoriaId }
     val ehLanche = produto.categoriaId == 1
+    val ehFavorito = estadoBurger.favoritos.contains(produto.id)
 
-    var quantidade by rememberSaveable { mutableIntStateOf(1) }
-    var pontoCarne by rememberSaveable { mutableStateOf(viewModel.pontosCarne[1]) }
-    val adicionaisEscolhidos = rememberSaveable(
-        saver = listSaver(
-            save = { lista -> lista.map { it.nome } },
-            restore = { nomes ->
-                viewModel.adicionaisDisponiveis.filter { it.nome in nomes }.toMutableStateList()
-            }
-        )
-    ) { mutableStateListOf<Adicional>() }
-    var observacao by rememberSaveable { mutableStateOf("") }
-
-    val precoUnitario = produto.preco + adicionaisEscolhidos.sumOf { it.preco }
-    val precoTotalAtual = precoUnitario * quantidade
+    val precoUnitario = produto.preco + estadoProduto.adicionaisEscolhidos.sumOf { it.preco }
+    val precoTotalAtual = precoUnitario * estadoProduto.quantidadeDetalhe
 
     Column(
         modifier = Modifier
@@ -105,9 +94,9 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
             titulo = "Detalhes do produto",
             onVoltar = { navController.popBackStack() },
             acoes = {
-                IconButton(onClick = { viewModel.alternarFavorito(produto.id) }) {
+                IconButton(onClick = { burgerViewModel.alternarFavorito(produto.id) }) {
                     Icon(
-                        imageVector = if (viewModel.ehFavorito(produto.id)) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
+                        imageVector = if (ehFavorito) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favoritar",
                         tint = CorLaranja
                     )
@@ -211,16 +200,19 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                     Spacer(modifier = Modifier.height(24.dp))
                     TituloSecao("Ponto da Carne")
                     Spacer(modifier = Modifier.height(8.dp))
-                    viewModel.pontosCarne.forEach { ponto ->
+                    produtoViewModel.pontosCarne.forEach { ponto ->
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .selectable(selected = pontoCarne == ponto, onClick = { pontoCarne = ponto }),
+                                .selectable(
+                                    selected = estadoProduto.pontoCarneEscolhido == ponto,
+                                    onClick = { produtoViewModel.escolherPontoCarne(ponto) }
+                                ),
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             RadioButton(
-                                selected = pontoCarne == ponto,
-                                onClick = { pontoCarne = ponto },
+                                selected = estadoProduto.pontoCarneEscolhido == ponto,
+                                onClick = { produtoViewModel.escolherPontoCarne(ponto) },
                                 colors = RadioButtonDefaults.colors(selectedColor = CorLaranja)
                             )
                             Text(ponto, color = Color.White, fontSize = 14.sp)
@@ -230,20 +222,17 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                     Spacer(modifier = Modifier.height(16.dp))
                     TituloSecao("Adicionais")
                     Spacer(modifier = Modifier.height(8.dp))
-                    viewModel.adicionaisDisponiveis.forEach { adicional ->
-                        val marcado = adicionaisEscolhidos.contains(adicional)
-                        val alternar = {
-                            if (marcado) adicionaisEscolhidos.remove(adicional) else adicionaisEscolhidos.add(adicional)
-                        }
+                    produtoViewModel.adicionaisDisponiveis.forEach { adicional ->
+                        val marcado = estadoProduto.adicionaisEscolhidos.contains(adicional)
                         Row(
                             modifier = Modifier
                                 .fillMaxWidth()
-                                .clickable { alternar() },
+                                .clickable { produtoViewModel.alternarAdicional(adicional) },
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Checkbox(
                                 checked = marcado,
-                                onCheckedChange = { alternar() },
+                                onCheckedChange = { produtoViewModel.alternarAdicional(adicional) },
                                 colors = CheckboxDefaults.colors(
                                     checkedColor = CorLaranja,
                                     checkmarkColor = Color.Black,
@@ -260,8 +249,8 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                 TituloSecao("Observações")
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = observacao,
-                    onValueChange = { observacao = it },
+                    value = estadoProduto.observacaoDetalhe,
+                    onValueChange = { produtoViewModel.mudarObservacaoDetalhe(it) },
                     placeholder = { Text("Ex: sem picles, molho à parte...", color = CorTextoCinza) },
                     minLines = 3,
                     shape = RoundedCornerShape(12.dp),
@@ -284,9 +273,9 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 SeletorQuantidade(
-                    quantidade = quantidade,
-                    aoDiminuir = { if (quantidade > 1) quantidade-- },
-                    aoAumentar = { quantidade++ },
+                    quantidade = estadoProduto.quantidadeDetalhe,
+                    aoDiminuir = { produtoViewModel.diminuirQuantidadeDetalhe() },
+                    aoAumentar = { produtoViewModel.aumentarQuantidadeDetalhe() },
                     tamanhoBotao = 32
                 )
 
@@ -295,26 +284,19 @@ fun CustomizationScreen(navController: NavHostController, viewModel: BurgerViewM
                 BotaoLaranja(
                     texto = "Adicionar • " + formatarPreco(precoTotalAtual),
                     onClick = {
-                        viewModel.adicionarAoCarrinho(
+                        burgerViewModel.adicionarAoCarrinho(
                             produto = produto,
-                            pontoCarne = if (ehLanche) pontoCarne else "",
-                            adicionais = adicionaisEscolhidos.toList(),
-                            observacao = observacao,
-                            quantidade = quantidade
+                            pontoCarne = if (ehLanche) estadoProduto.pontoCarneEscolhido else "",
+                            adicionais = estadoProduto.adicionaisEscolhidos,
+                            observacao = estadoProduto.observacaoDetalhe,
+                            quantidade = estadoProduto.quantidadeDetalhe
                         )
+                        produtoViewModel.limparPersonalizacaoAtual()
                         navController.irParaAba(Rotas.CARRINHO)
                     },
                     modifier = Modifier.weight(1f)
                 )
             }
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun CustomizationScreenPreview() {
-    ForgeBurgerTheme {
-        CustomizationScreen(rememberNavController(), viewModel(), produtoId = 4)
     }
 }

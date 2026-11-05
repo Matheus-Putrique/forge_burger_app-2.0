@@ -1,59 +1,71 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.forge_burger.data.Perfil
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
-import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.launch
+import com.example.forge_burger.viewmodel.BurgerViewModel
+import com.example.forge_burger.viewmodel.CategoriaViewModel
+import com.example.forge_burger.viewmodel.ProdutoViewModel
 
 @Composable
-fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerViewModel, categoriaId: Int) {
-    val context = LocalContext.current
-    val db = AppDatabase.getDatabase(context)
-    val categoriaDAO = db.categoriaDAO()
-    val produtoDAO = db.produtoDAO()
+fun CategoriaDetalhesScreen(
+    navController: NavHostController,
+    categoriaViewModel: CategoriaViewModel,
+    produtoViewModel: ProdutoViewModel,
+    burgerViewModel: BurgerViewModel,
+    categoriaId: Int
+) {
+    val estadoCategoria by categoriaViewModel.uiState.collectAsState()
+    val estadoProduto by produtoViewModel.uiState.collectAsState()
+    val estadoBurger by burgerViewModel.uiState.collectAsState()
 
-    var categoria by remember { mutableStateOf<Categoria?>(viewModel.buscarCategoria(categoriaId)) }
-    var produtos by remember { mutableStateOf<List<Produto>>(viewModel.produtosDaCategoria(categoriaId)) }
+    val isAdmin = estadoBurger.perfilLogado == Perfil.ADMIN
 
-    // Requisito 3.3: busca a categoria e os produtos diretamente no banco pelo ID recebido por navegação
     LaunchedEffect(categoriaId) {
-        CoroutineScope(Dispatchers.IO).launch {
-            categoria = buscarCategoriaPorId(categoriaId, categoriaDAO)
-            produtos = buscarProdutosPorCategoria(categoriaId, produtoDAO)
-        }
+        categoriaViewModel.carregarCategoriaPorId(categoriaId)
+        produtoViewModel.carregarProdutosDaCategoria(categoriaId)
     }
+
+    val catAtual = estadoCategoria.categoriaDetalhe
+    val produtos = estadoProduto.produtosDaCategoriaDetalhe
 
     Column(
         modifier = Modifier
             .fillMaxSize()
             .background(CorFundo)
     ) {
-        BarraTopo(categoria?.nome ?: "Categoria", onVoltar = { navController.popBackStack() })
+        BarraTopo(catAtual?.nome ?: "Categoria", onVoltar = { navController.popBackStack() })
 
-        val catAtual = categoria
         if (catAtual == null) {
             EstadoVazio("🤷", "Categoria não encontrada", "Ela pode ter sido removida.")
             return@Column
@@ -102,7 +114,7 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
             if (produtos.isEmpty()) {
                 item {
                     Text(
-                        if (viewModel.isAdmin) "Nenhum produto ainda. Cadastre um pelo botão \"Novo produto\" abaixo."
+                        if (isAdmin) "Nenhum produto ainda. Cadastre um pelo botão \"Novo produto\" abaixo."
                         else "Nenhum produto nesta categoria por enquanto.",
                         color = CorTextoCinza,
                         fontSize = 14.sp
@@ -129,16 +141,19 @@ fun CategoriaDetalhesScreen(navController: NavHostController, viewModel: BurgerV
                 }
             }
 
-            if (viewModel.isAdmin) item {
-                Spacer(Modifier.height(8.dp))
-                BotaoLaranja(
-                    texto = "Novo produto",
-                    onClick = {
-                        viewModel.limparEdicaoProduto()
-                        navController.navigate(Rotas.novoProduto(catAtual.id))
-                    },
-                    modifier = Modifier.fillMaxWidth()
-                )
+            if (isAdmin) {
+                item {
+                    Spacer(Modifier.height(8.dp))
+                    BotaoLaranja(
+                        texto = "Novo produto",
+                        onClick = {
+                            val primeiraCat = estadoCategoria.listaCategorias.firstOrNull()?.id
+                            produtoViewModel.prepararNovoProduto(catAtual.id, primeiraCat)
+                            navController.navigate(Rotas.novoProduto(catAtual.id))
+                        },
+                        modifier = Modifier.fillMaxWidth()
+                    )
+                }
             }
         }
     }
@@ -156,13 +171,5 @@ private fun CardEstatistica(rotulo: String, valor: String, modifier: Modifier = 
             Text(valor, color = CorLaranja, fontSize = 16.sp, fontWeight = FontWeight.Bold, maxLines = 1)
             Text(rotulo, color = CorTextoCinza, fontSize = 11.sp)
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun CategoriaDetalhesScreenPreview() {
-    ForgeBurgerTheme {
-        CategoriaDetalhesScreen(rememberNavController(), viewModel(), categoriaId = 1)
     }
 }

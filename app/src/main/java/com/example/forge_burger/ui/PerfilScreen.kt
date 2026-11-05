@@ -1,9 +1,21 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import android.widget.Toast
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -16,35 +28,40 @@ import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
+import com.example.forge_burger.data.Perfil
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
-import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
+import com.example.forge_burger.viewmodel.BurgerViewModel
+import com.example.forge_burger.viewmodel.ProdutoViewModel
 
 @Composable
-fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
+fun PerfilScreen(
+    navController: NavHostController,
+    burgerViewModel: BurgerViewModel,
+    produtoViewModel: ProdutoViewModel
+) {
     val context = LocalContext.current
+    val estadoBurger by burgerViewModel.uiState.collectAsState()
+    val estadoProduto by produtoViewModel.uiState.collectAsState()
 
-    var nome by remember { mutableStateOf(viewModel.nomeUsuario) }
-    var endereco by remember { mutableStateOf(viewModel.endereco) }
-    var telefone by remember { mutableStateOf(viewModel.telefone) }
-
-    val favoritos = viewModel.favoritos.mapNotNull { viewModel.buscarProduto(it) }
-    val isAdmin = viewModel.isAdmin
+    val favoritos = estadoBurger.favoritos.mapNotNull { idFav ->
+        estadoProduto.listaProdutos.find { it.id == idFav }
+    }
+    val isAdmin = estadoBurger.perfilLogado == Perfil.ADMIN
 
     LazyColumn(
         modifier = Modifier
@@ -66,9 +83,9 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     }
                 }
                 Spacer(Modifier.height(8.dp))
-                Text("Olá, ${viewModel.nomeUsuario}!", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+                Text("Olá, ${estadoBurger.nomeUsuario}!", color = Color.White, fontSize = 20.sp, fontWeight = FontWeight.Bold)
                 Text(
-                    "${viewModel.pedidos.size} pedido(s) • ${favoritos.size} favorito(s)",
+                    "${estadoBurger.pedidos.size} pedido(s) • ${favoritos.size} favorito(s)",
                     color = CorTextoCinza,
                     fontSize = 13.sp
                 )
@@ -78,7 +95,7 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     color = if (isAdmin) CorLaranja else Color(60, 45, 20)
                 ) {
                     Text(
-                        text = viewModel.perfilLogado?.rotulo ?: "Sem sessão",
+                        text = estadoBurger.perfilLogado?.rotulo ?: "Sem sessão",
                         color = if (isAdmin) Color.Black else CorLaranja,
                         fontSize = 12.sp,
                         fontWeight = FontWeight.Bold,
@@ -86,7 +103,7 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                 }
                 Spacer(Modifier.height(12.dp))
-                OutlinedButton(onClick = { viewModel.logout() }) {
+                OutlinedButton(onClick = { burgerViewModel.sairDaConta() }) {
                     Icon(Icons.AutoMirrored.Filled.ExitToApp, contentDescription = null, tint = CorLaranja)
                     Spacer(Modifier.width(8.dp))
                     Text("Sair", color = CorLaranja, fontWeight = FontWeight.Bold)
@@ -100,8 +117,8 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     Text("Dados de entrega", color = Color.White, fontWeight = FontWeight.Bold, fontSize = 16.sp)
                     Spacer(Modifier.height(12.dp))
                     OutlinedTextField(
-                        value = nome,
-                        onValueChange = { nome = it },
+                        value = estadoBurger.nomeCampoPerfil,
+                        onValueChange = { burgerViewModel.mudarNomePerfil(it) },
                         label = { Text("Nome") },
                         singleLine = true,
                         shape = RoundedCornerShape(12.dp),
@@ -110,8 +127,8 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = endereco,
-                        onValueChange = { endereco = it },
+                        value = estadoBurger.enderecoCampoPerfil,
+                        onValueChange = { burgerViewModel.mudarEnderecoPerfil(it) },
                         label = { Text("Endereço") },
                         minLines = 2,
                         shape = RoundedCornerShape(12.dp),
@@ -120,8 +137,8 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                     Spacer(Modifier.height(8.dp))
                     OutlinedTextField(
-                        value = telefone,
-                        onValueChange = { telefone = it.filter { c -> c.isDigit() || c in " ()-+" } },
+                        value = estadoBurger.telefoneCampoPerfil,
+                        onValueChange = { burgerViewModel.mudarTelefonePerfil(it) },
                         label = { Text("Telefone") },
                         singleLine = true,
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
@@ -133,7 +150,7 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     BotaoLaranja(
                         texto = "Salvar",
                         onClick = {
-                            viewModel.salvarPerfil(nome, endereco, telefone)
+                            burgerViewModel.salvarDadosPerfil()
                             Toast.makeText(context, "Dados salvos", Toast.LENGTH_SHORT).show()
                         },
                         modifier = Modifier.fillMaxWidth()
@@ -177,10 +194,10 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
         }
 
         item { TituloSecao("Meus pedidos", Modifier.padding(top = 8.dp)) }
-        if (viewModel.pedidos.isEmpty()) {
+        if (estadoBurger.pedidos.isEmpty()) {
             item { Text("Você ainda não fez nenhum pedido.", color = CorTextoCinza, fontSize = 13.sp) }
         }
-        items(viewModel.pedidos, key = { "pedido-${it.numero}" }) { pedido ->
+        items(estadoBurger.pedidos, key = { "pedido-${it.numero}" }) { pedido ->
             CardEscuro(
                 Modifier
                     .fillMaxWidth()
@@ -199,13 +216,5 @@ fun PerfilScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun PerfilScreenPreview() {
-    ForgeBurgerTheme {
-        PerfilScreen(rememberNavController(), viewModel())
     }
 }

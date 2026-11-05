@@ -1,4 +1,4 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Home

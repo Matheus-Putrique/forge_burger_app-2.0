@@ -1,8 +1,17 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -13,29 +22,34 @@ import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.*
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.text.font.FontWeight
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
-import com.example.forge_burger.ui.theme.ForgeBurgerTheme
 import com.example.forge_burger.ui.theme.formatarPreco
+import com.example.forge_burger.viewmodel.CategoriaViewModel
+import com.example.forge_burger.viewmodel.ProdutoViewModel
 
 @Composable
-fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
-    var texto by rememberSaveable { mutableStateOf("") }
+fun BuscaScreen(
+    navController: NavHostController,
+    produtoViewModel: ProdutoViewModel,
+    categoriaViewModel: CategoriaViewModel
+) {
+    val estadoProduto by produtoViewModel.uiState.collectAsState()
+    val estadoCategoria by categoriaViewModel.uiState.collectAsState()
 
-    val resultados = viewModel.produtos.filter {
+    val texto = estadoProduto.textoBusca
+    val resultados = estadoProduto.listaProdutos.filter {
         it.nome.contains(texto.trim(), ignoreCase = true) ||
             it.descricao.contains(texto.trim(), ignoreCase = true)
     }
@@ -53,12 +67,12 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
 
         OutlinedTextField(
             value = texto,
-            onValueChange = { texto = it },
+            onValueChange = { produtoViewModel.mudarTextoBusca(it) },
             placeholder = { Text("Buscar lanches, bebidas, porções...", color = CorTextoCinza) },
             leadingIcon = { Icon(Icons.Default.Search, contentDescription = null, tint = CorTextoCinza) },
             trailingIcon = {
                 if (texto.isNotEmpty()) {
-                    IconButton(onClick = { texto = "" }) {
+                    IconButton(onClick = { produtoViewModel.limparBusca() }) {
                         Icon(Icons.Default.Clear, contentDescription = "Limpar", tint = CorTextoCinza)
                     }
                 }
@@ -78,7 +92,8 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
         ) {
             if (texto.isBlank()) {
                 item { TituloSecao("Navegue por categoria") }
-                items(viewModel.categorias, key = { it.id }) { categoria ->
+                items(estadoCategoria.listaCategorias, key = { it.id }) { categoria ->
+                    val quantidadeNaCategoria = estadoProduto.listaProdutos.count { it.categoriaId == categoria.id }
                     CardEscuro(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -88,7 +103,7 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                             Text(categoria.emoji, fontSize = 28.sp)
                             Spacer(Modifier.width(12.dp))
                             Text(categoria.nome, color = Color.White, fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
-                            Text("${viewModel.produtosDaCategoria(categoria.id).size}", color = CorLaranja, fontWeight = FontWeight.Bold)
+                            Text("$quantidadeNaCategoria", color = CorLaranja, fontWeight = FontWeight.Bold)
                         }
                     }
                 }
@@ -101,6 +116,7 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     )
                 }
                 items(resultados, key = { it.id }) { produto ->
+                    val nomeDaCategoria = estadoCategoria.listaCategorias.find { it.id == produto.categoriaId }?.nome ?: ""
                     CardEscuro(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -112,7 +128,7 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                             Column(Modifier.weight(1f)) {
                                 Text(produto.nome, color = Color.White, fontSize = 15.sp, fontWeight = FontWeight.Bold)
                                 Text(
-                                    viewModel.buscarCategoria(produto.categoriaId)?.nome ?: "",
+                                    nomeDaCategoria,
                                     color = CorTextoCinza,
                                     fontSize = 12.sp
                                 )
@@ -123,13 +139,5 @@ fun BuscaScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 }
             }
         }
-    }
-}
-
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun BuscaScreenPreview() {
-    ForgeBurgerTheme {
-        BuscaScreen(rememberNavController(), viewModel())
     }
 }

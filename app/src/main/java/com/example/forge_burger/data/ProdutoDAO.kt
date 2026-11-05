@@ -1,10 +1,11 @@
-package com.example.forge_burger
+package com.example.forge_burger.data
 
 import androidx.room.Dao
 import androidx.room.Delete
 import androidx.room.Insert
 import androidx.room.Query
 import androidx.room.Update
+import kotlinx.coroutines.flow.Flow
 
 @Dao
 interface ProdutoDAO {
@@ -13,7 +14,7 @@ interface ProdutoDAO {
     suspend fun inserir(produto: Produto)
 
     @Query("SELECT * FROM produtos")
-    suspend fun buscarTodos(): List<Produto>
+    fun buscarTodos(): Flow<List<Produto>>
 
     @Query("SELECT * FROM produtos WHERE id = :id")
     suspend fun buscarPorId(id: Int): Produto?

@@ -1,7 +1,14 @@
-package com.example.forge_burger
+package com.example.forge_burger.ui
 
 import androidx.compose.foundation.background
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.imePadding
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardActions
@@ -10,10 +17,12 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
-import androidx.compose.runtime.*
-import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -22,40 +31,18 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.text.input.PasswordVisualTransformation
 import androidx.compose.ui.text.input.VisualTransformation
 import androidx.compose.ui.text.style.TextAlign
-import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import androidx.navigation.NavHostController
-import androidx.navigation.compose.rememberNavController
 import com.example.forge_burger.ui.theme.CorFundo
 import com.example.forge_burger.ui.theme.CorLaranja
 import com.example.forge_burger.ui.theme.CorTextoCinza
-import com.example.forge_burger.ui.theme.ForgeBurgerTheme
+import com.example.forge_burger.viewmodel.BurgerViewModel
 
 @Composable
 fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     val focusManager = LocalFocusManager.current
-
-    var usuario by rememberSaveable { mutableStateOf("") }
-    var senha by rememberSaveable { mutableStateOf("") }
-    var mostrarSenha by rememberSaveable { mutableStateOf(false) }
-    var erro by rememberSaveable { mutableStateOf<String?>(null) }
-
-    fun entrar() {
-        erro = when {
-            usuario.isBlank() || senha.isBlank() -> "Preencha usuário e senha"
-            !viewModel.login(usuario, senha) -> "Usuário ou senha incorretos"
-            else -> null
-        }
-        if (erro == null) {
-            focusManager.clearFocus()
-            navController.navigate(Rotas.INICIO) {
-                popUpTo(Rotas.LOGIN) { inclusive = true }
-                launchSingleTop = true
-            }
-        }
-    }
+    val uiState by viewModel.uiState.collectAsState()
 
     Column(
         modifier = Modifier
@@ -77,11 +64,11 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
         CardEscuro(modifier = Modifier.fillMaxWidth()) {
             Column(Modifier.padding(16.dp)) {
                 OutlinedTextField(
-                    value = usuario,
-                    onValueChange = { usuario = it; erro = null },
+                    value = uiState.usuarioCampoLogin,
+                    onValueChange = { viewModel.mudarUsuarioLogin(it) },
                     label = { Text("Usuário") },
                     singleLine = true,
-                    isError = erro != null,
+                    isError = uiState.erroLogin != null,
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Ascii, imeAction = ImeAction.Next),
                     shape = RoundedCornerShape(12.dp),
                     colors = coresCampo(),
@@ -89,17 +76,19 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 )
                 Spacer(Modifier.height(8.dp))
                 OutlinedTextField(
-                    value = senha,
-                    onValueChange = { senha = it; erro = null },
+                    value = uiState.senhaCampoLogin,
+                    onValueChange = { viewModel.mudarSenhaLogin(it) },
                     label = { Text("Senha") },
                     singleLine = true,
-                    isError = erro != null,
-                    visualTransformation = if (mostrarSenha) VisualTransformation.None else PasswordVisualTransformation(),
+                    isError = uiState.erroLogin != null,
+                    visualTransformation = if (uiState.mostrarSenhaLogin) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
-                    keyboardActions = KeyboardActions(onDone = { entrar() }),
+                    keyboardActions = KeyboardActions(
+                        onDone = { confirmarEntradaUsuario(viewModel, focusManager, navController) }
+                    ),
                     trailingIcon = {
-                        TextButton(onClick = { mostrarSenha = !mostrarSenha }) {
-                            Text(if (mostrarSenha) "Ocultar" else "Mostrar", color = CorTextoCinza, fontSize = 12.sp)
+                        TextButton(onClick = { viewModel.alternarVisibilidadeSenha() }) {
+                            Text(if (uiState.mostrarSenhaLogin) "Ocultar" else "Mostrar", color = CorTextoCinza, fontSize = 12.sp)
                         }
                     },
                     shape = RoundedCornerShape(12.dp),
@@ -107,13 +96,17 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     modifier = Modifier.fillMaxWidth()
                 )
 
-                erro?.let {
+                uiState.erroLogin?.let { mensagemErro ->
                     Spacer(Modifier.height(8.dp))
-                    Text(it, color = Color(0xFFFF6B6B), fontSize = 13.sp)
+                    Text(mensagemErro, color = Color(0xFFFF6B6B), fontSize = 13.sp)
                 }
 
                 Spacer(Modifier.height(16.dp))
-                BotaoLaranja(texto = "Entrar", onClick = { entrar() }, modifier = Modifier.fillMaxWidth())
+                BotaoLaranja(
+                    texto = "Entrar",
+                    onClick = { confirmarEntradaUsuario(viewModel, focusManager, navController) },
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         }
 
@@ -127,10 +120,16 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     }
 }
 
-@Preview(showBackground = true, heightDp = 800)
-@Composable
-fun LoginScreenPreview() {
-    ForgeBurgerTheme {
-        LoginScreen(rememberNavController(), viewModel())
+private fun confirmarEntradaUsuario(
+    viewModel: BurgerViewModel,
+    focusManager: FocusManager,
+    navController: NavHostController
+) {
+    if (viewModel.tentarEntrar()) {
+        focusManager.clearFocus()
+        navController.navigate(Rotas.INICIO) {
+            popUpTo(Rotas.LOGIN) { inclusive = true }
+            launchSingleTop = true
+        }
     }
 }
