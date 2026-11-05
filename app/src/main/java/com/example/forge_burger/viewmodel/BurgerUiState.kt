@@ -19,5 +19,17 @@ data class BurgerUiState(
     val carrinho: List<ItemCarrinho> = emptyList(),
     val formaPagamentoEscolhida: String = "Pix",
     val pedidos: List<Pedido> = emptyList(),
-    val favoritos: List<Int> = emptyList()
-)
+    val taxaEntrega: Double = 4.99
+) {
+    val itensNoCarrinho: Int
+        get() = carrinho.sumOf { it.quantidade }
+
+    val subtotalCarrinho: Double
+        get() = carrinho.sumOf { it.total }
+
+    val totalCarrinho: Double
+        get() = carrinho.sumOf { it.total } + taxaEntrega
+
+    val pedidoPorNumero: Map<Int, Pedido>
+        get() = pedidos.associateBy { it.numero }
+}

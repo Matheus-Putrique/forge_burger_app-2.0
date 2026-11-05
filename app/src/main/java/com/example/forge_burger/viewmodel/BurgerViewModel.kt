@@ -16,7 +16,6 @@ class BurgerViewModel : ViewModel() {
     private val _uiState = MutableStateFlow(BurgerUiState())
     val uiState: StateFlow<BurgerUiState> = _uiState.asStateFlow()
 
-    val taxaEntrega = 4.99
     val formasPagamento = listOf("Pix", "Cartão na entrega", "Dinheiro")
 
     private val credenciais = mapOf(
@@ -76,17 +75,6 @@ class BurgerViewModel : ViewModel() {
         }
     }
 
-    fun alternarFavorito(produtoId: Int) {
-        _uiState.update { estado ->
-            val novaLista = if (estado.favoritos.contains(produtoId)) {
-                estado.favoritos - produtoId
-            } else {
-                estado.favoritos + produtoId
-            }
-            estado.copy(favoritos = novaLista)
-        }
-    }
-
     fun adicionarAoCarrinho(
         produto: Produto,
         pontoCarne: String,
@@ -138,7 +126,7 @@ class BurgerViewModel : ViewModel() {
             numero = proximoNumeroPedido,
             itens = estado.carrinho,
             subtotal = subtotal,
-            taxaEntrega = taxaEntrega,
+            taxaEntrega = estado.taxaEntrega,
             formaPagamento = estado.formaPagamentoEscolhida,
             endereco = estado.endereco
         )

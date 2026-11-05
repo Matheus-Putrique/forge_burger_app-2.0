@@ -35,7 +35,7 @@ import com.example.forge_burger.viewmodel.BurgerViewModel
 @Composable
 fun PedidoScreen(navController: NavHostController, viewModel: BurgerViewModel, numero: Int) {
     val uiState by viewModel.uiState.collectAsState()
-    val pedido = uiState.pedidos.find { it.numero == numero }
+    val pedido = uiState.pedidoPorNumero[numero]
 
     Column(
         modifier = Modifier
@@ -49,7 +49,7 @@ fun PedidoScreen(navController: NavHostController, viewModel: BurgerViewModel, n
             return@Column
         }
 
-        val minutos = 25 + pedido.itens.sumOf { it.quantidade } * 3
+        val minutos = pedido.tempoEstimadoMinutos
 
         LazyColumn(
             modifier = Modifier.weight(1f),

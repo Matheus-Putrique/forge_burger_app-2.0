@@ -62,7 +62,6 @@ fun CustomizationScreen(
 ) {
     val estadoProduto by produtoViewModel.uiState.collectAsState()
     val estadoCategoria by categoriaViewModel.uiState.collectAsState()
-    val estadoBurger by burgerViewModel.uiState.collectAsState()
 
     LaunchedEffect(produtoId) {
         produtoViewModel.abrirDetalhesProduto(produtoId)
@@ -77,12 +76,12 @@ fun CustomizationScreen(
         return
     }
 
-    val categoria = estadoCategoria.listaCategorias.find { it.id == produto.categoriaId }
-    val ehLanche = produto.categoriaId == 1
-    val ehFavorito = estadoBurger.favoritos.contains(produto.id)
+    val categoria = estadoCategoria.categoriaPorId[produto.categoriaId]
+    val ehLanche = estadoProduto.detalheEhLanche
+    val ehFavorito = estadoProduto.detalheEhFavorito
 
-    val precoUnitario = produto.preco + estadoProduto.adicionaisEscolhidos.sumOf { it.preco }
-    val precoTotalAtual = precoUnitario * estadoProduto.quantidadeDetalhe
+    val precoUnitario = estadoProduto.precoUnitarioDetalhe
+    val precoTotalAtual = estadoProduto.precoTotalDetalhe
 
     Column(
         modifier = Modifier
@@ -94,7 +93,7 @@ fun CustomizationScreen(
             titulo = "Detalhes do produto",
             onVoltar = { navController.popBackStack() },
             acoes = {
-                IconButton(onClick = { burgerViewModel.alternarFavorito(produto.id) }) {
+                IconButton(onClick = { produtoViewModel.alternarFavorito(produto.id) }) {
                     Icon(
                         imageVector = if (ehFavorito) Icons.Default.Favorite else Icons.Default.FavoriteBorder,
                         contentDescription = "Favoritar",

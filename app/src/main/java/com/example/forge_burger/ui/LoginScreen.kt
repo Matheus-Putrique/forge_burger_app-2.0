@@ -22,7 +22,6 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.focus.FocusManager
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.ui.text.font.FontWeight
@@ -84,7 +83,15 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                     visualTransformation = if (uiState.mostrarSenhaLogin) VisualTransformation.None else PasswordVisualTransformation(),
                     keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Password, imeAction = ImeAction.Done),
                     keyboardActions = KeyboardActions(
-                        onDone = { confirmarEntradaUsuario(viewModel, focusManager, navController) }
+                        onDone = {
+                            if (viewModel.tentarEntrar()) {
+                                focusManager.clearFocus()
+                                navController.navigate(Rotas.INICIO) {
+                                    popUpTo(Rotas.LOGIN) { inclusive = true }
+                                    launchSingleTop = true
+                                }
+                            }
+                        }
                     ),
                     trailingIcon = {
                         TextButton(onClick = { viewModel.alternarVisibilidadeSenha() }) {
@@ -104,7 +111,15 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 Spacer(Modifier.height(16.dp))
                 BotaoLaranja(
                     texto = "Entrar",
-                    onClick = { confirmarEntradaUsuario(viewModel, focusManager, navController) },
+                    onClick = {
+                        if (viewModel.tentarEntrar()) {
+                            focusManager.clearFocus()
+                            navController.navigate(Rotas.INICIO) {
+                                popUpTo(Rotas.LOGIN) { inclusive = true }
+                                launchSingleTop = true
+                            }
+                        }
+                    },
                     modifier = Modifier.fillMaxWidth()
                 )
             }
@@ -117,19 +132,5 @@ fun LoginScreen(navController: NavHostController, viewModel: BurgerViewModel) {
             fontSize = 12.sp,
             textAlign = TextAlign.Center
         )
-    }
-}
-
-private fun confirmarEntradaUsuario(
-    viewModel: BurgerViewModel,
-    focusManager: FocusManager,
-    navController: NavHostController
-) {
-    if (viewModel.tentarEntrar()) {
-        focusManager.clearFocus()
-        navController.navigate(Rotas.INICIO) {
-            popUpTo(Rotas.LOGIN) { inclusive = true }
-            launchSingleTop = true
-        }
     }
 }

@@ -40,11 +40,12 @@ O código em `com.example.forge_burger` está dividido em camadas com responsabi
 - **`data/repository/`**
   - `CategoriaRepository.kt` e `ProdutoRepository.kt` — única fonte de verdade dos dados; encapsulam o acesso aos DAOs com tratamento de erros (`try/catch` + `Log.e`) e carga inicial quando o banco está vazio.
 - **`viewmodel/`**
-  - `ProdutoViewModel.kt` + `ProdutoUiState.kt` + `ProdutoViewModelFactory.kt` — gerencia o estado reativo dos produtos, filtros, busca, detalhes e formulário de cadastro/edição via `StateFlow`.
+  - `ProdutoViewModel.kt` + `ProdutoUiState.kt` + `ProdutoViewModelFactory.kt` — gerencia o estado reativo dos produtos, filtros, busca, favoritos, detalhes e formulário de cadastro/edição via `StateFlow`.
   - `CategoriaViewModel.kt` + `CategoriaUiState.kt` + `CategoriaViewModelFactory.kt` — gerencia a lista reativa de categorias, detalhes e formulário de criação/edição via `StateFlow`.
-  - `BurgerViewModel.kt` + `BurgerUiState.kt` — gerencia login, perfil, favoritos, carrinho e pedidos em memória também no padrão `_uiState` privado + `uiState` público (`StateFlow`).
+  - `BurgerViewModel.kt` + `BurgerUiState.kt` — gerencia login, perfil, carrinho e pedidos em memória também no padrão `_uiState` privado + `uiState` público (`StateFlow`).
+  - Cada `UiState` expõe ainda **campos calculados** a partir do estado que já guarda (`produtosFiltrados`, `resultadosBusca`, `subtotalCarrinho`, `precoMedioCategoriaDetalhe`, …), para que a tela leia o valor pronto em vez de fazer a conta.
 - **`ui/` (e `ui/theme/`)**
-  - Todas as telas `@Composable`, `AppNavigation.kt`, `Rotas.kt`, `BottomNavBar.kt`, `Componentes.kt` e `Tema.kt`. As telas apenas observam o `uiState` com `collectAsState()` e acionam métodos dos `ViewModel`, sem contato direto com `DAO`, `CoroutineScope` ou `Dispatchers.IO`.
+  - Todas as telas `@Composable`, `AppNavigation.kt`, `Rotas.kt`, `BottomNavBar.kt`, `Componentes.kt` e `Tema.kt`. As telas apenas observam o `uiState` com `collectAsState()` e acionam métodos dos `ViewModel`, sem contato direto com `DAO`, `CoroutineScope` ou `Dispatchers.IO` — e sem nenhum cálculo de regra de negócio (nenhum `.filter`, `.sumOf`, `.average` ou `.sortedBy` dentro de `ui/`).
 - **Raiz (`com.example.forge_burger`)**
   - `MainActivity.kt` — inicializa o banco e os repositórios e inicia o `AppNavigation`.
 

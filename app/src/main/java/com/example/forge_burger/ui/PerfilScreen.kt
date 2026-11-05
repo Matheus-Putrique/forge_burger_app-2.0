@@ -58,9 +58,7 @@ fun PerfilScreen(
     val estadoBurger by burgerViewModel.uiState.collectAsState()
     val estadoProduto by produtoViewModel.uiState.collectAsState()
 
-    val favoritos = estadoBurger.favoritos.mapNotNull { idFav ->
-        estadoProduto.listaProdutos.find { it.id == idFav }
-    }
+    val favoritos = estadoProduto.produtosFavoritos
     val isAdmin = estadoBurger.perfilLogado == Perfil.ADMIN
 
     LazyColumn(
@@ -207,7 +205,7 @@ fun PerfilScreen(
                     Column(Modifier.weight(1f)) {
                         Text("Pedido #${pedido.numero}", color = Color.White, fontWeight = FontWeight.Bold)
                         Text(
-                            "${pedido.itens.sumOf { it.quantidade }} item(ns) • ${pedido.formaPagamento}",
+                            "${pedido.quantidadeItens} item(ns) • ${pedido.formaPagamento}",
                             color = CorTextoCinza,
                             fontSize = 12.sp
                         )

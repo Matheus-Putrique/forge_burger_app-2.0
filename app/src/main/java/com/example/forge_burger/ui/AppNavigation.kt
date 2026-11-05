@@ -52,8 +52,6 @@ fun AppNavigation(
         }
     }
 
-    val quantidadeNoCarrinho = estadoBurger.carrinho.sumOf { it.quantidade }
-
     Scaffold(
         containerColor = CorFundo,
         bottomBar = {
@@ -61,7 +59,7 @@ fun AppNavigation(
                 BottomNavBar(
                     navController = navController,
                     rotaAtual = rotaAtual,
-                    itensNoCarrinho = quantidadeNoCarrinho
+                    itensNoCarrinho = estadoBurger.itensNoCarrinho
                 )
             }
         }

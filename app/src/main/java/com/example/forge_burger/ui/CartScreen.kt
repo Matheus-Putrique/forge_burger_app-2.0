@@ -47,8 +47,8 @@ import com.example.forge_burger.viewmodel.BurgerViewModel
 fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
     val uiState by viewModel.uiState.collectAsState()
 
-    val subtotal = uiState.carrinho.sumOf { it.total }
-    val totalGeral = subtotal + viewModel.taxaEntrega
+    val subtotal = uiState.subtotalCarrinho
+    val totalGeral = uiState.totalCarrinho
 
     Column(
         modifier = Modifier
@@ -154,7 +154,7 @@ fun CartScreen(navController: NavHostController, viewModel: BurgerViewModel) {
                 HorizontalDivider(color = Color(40, 40, 40))
                 Spacer(modifier = Modifier.height(8.dp))
                 LinhaValor("Subtotal", formatarPreco(subtotal))
-                LinhaValor("Taxa de Entrega", formatarPreco(viewModel.taxaEntrega))
+                LinhaValor("Taxa de Entrega", formatarPreco(uiState.taxaEntrega))
                 Spacer(modifier = Modifier.height(4.dp))
                 LinhaValor("Total", formatarPreco(totalGeral), destaque = true)
                 Spacer(modifier = Modifier.height(8.dp))

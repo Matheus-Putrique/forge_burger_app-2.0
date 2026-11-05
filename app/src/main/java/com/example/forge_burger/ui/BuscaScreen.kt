@@ -49,10 +49,7 @@ fun BuscaScreen(
     val estadoCategoria by categoriaViewModel.uiState.collectAsState()
 
     val texto = estadoProduto.textoBusca
-    val resultados = estadoProduto.listaProdutos.filter {
-        it.nome.contains(texto.trim(), ignoreCase = true) ||
-            it.descricao.contains(texto.trim(), ignoreCase = true)
-    }
+    val resultados = estadoProduto.resultadosBusca
 
     Column(
         modifier = Modifier
@@ -93,7 +90,7 @@ fun BuscaScreen(
             if (texto.isBlank()) {
                 item { TituloSecao("Navegue por categoria") }
                 items(estadoCategoria.listaCategorias, key = { it.id }) { categoria ->
-                    val quantidadeNaCategoria = estadoProduto.listaProdutos.count { it.categoriaId == categoria.id }
+                    val quantidadeNaCategoria = estadoProduto.quantidadePorCategoria[categoria.id] ?: 0
                     CardEscuro(
                         modifier = Modifier
                             .fillMaxWidth()
@@ -116,7 +113,7 @@ fun BuscaScreen(
                     )
                 }
                 items(resultados, key = { it.id }) { produto ->
-                    val nomeDaCategoria = estadoCategoria.listaCategorias.find { it.id == produto.categoriaId }?.nome ?: ""
+                    val nomeDaCategoria = estadoCategoria.categoriaPorId[produto.categoriaId]?.nome ?: ""
                     CardEscuro(
                         modifier = Modifier
                             .fillMaxWidth()

@@ -11,4 +11,10 @@ data class CategoriaUiState(
     val estouEditando: Boolean = false,
     val categoriaEmEdicao: Categoria? = null,
     val categoriaDetalhe: Categoria? = null
-)
+) {
+    val categoriaPorId: Map<Int, Categoria>
+        get() = listaCategorias.associateBy { it.id }
+
+    val primeiraCategoriaId: Int?
+        get() = listaCategorias.firstOrNull()?.id
+}

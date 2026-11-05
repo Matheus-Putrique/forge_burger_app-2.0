@@ -70,13 +70,8 @@ fun MenuScreen(
 
     val isAdmin = estadoBurger.perfilLogado == Perfil.ADMIN
 
-    val categoriaAtual = estadoProduto.categoriaFiltroId?.let { idFiltro ->
-        estadoCategoria.listaCategorias.find { it.id == idFiltro }
-    }
-
-    val produtosFiltrados = estadoProduto.listaProdutos
-        .filter { categoriaAtual == null || it.categoriaId == categoriaAtual.id }
-        .let { lista -> if (estadoProduto.ordenarPorPreco) lista.sortedBy { it.preco } else lista }
+    val categoriaAtual = estadoProduto.categoriaFiltroId?.let { estadoCategoria.categoriaPorId[it] }
+    val produtosFiltrados = estadoProduto.produtosFiltrados
 
     Box(
         modifier = Modifier
@@ -100,11 +95,11 @@ fun MenuScreen(
                     modifier = Modifier.fillMaxWidth(),
                     verticalArrangement = Arrangement.spacedBy(8.dp)
                 ) {
-                    ChipCategoria("Todos", categoriaAtual == null) {
+                    ChipCategoria("Todos", estadoProduto.categoriaFiltroId == null) {
                         produtoViewModel.selecionarFiltroCategoria(null)
                     }
                     estadoCategoria.listaCategorias.forEach { categoria ->
-                        ChipCategoria(categoria.nome, categoriaAtual?.id == categoria.id) {
+                        ChipCategoria(categoria.nome, estadoProduto.categoriaFiltroId == categoria.id) {
                             produtoViewModel.selecionarFiltroCategoria(categoria.id)
                         }
                     }
@@ -183,9 +178,9 @@ fun MenuScreen(
         if (isAdmin) {
             ExtendedFloatingActionButton(
                 onClick = {
-                    val primeiraCat = estadoCategoria.listaCategorias.firstOrNull()?.id
-                    produtoViewModel.prepararNovoProduto(categoriaAtual?.id, primeiraCat)
-                    navController.navigate(Rotas.novoProduto(categoriaAtual?.id))
+                    val categoriaSelecionadaId = estadoProduto.categoriaFiltroId
+                    produtoViewModel.prepararNovoProduto(categoriaSelecionadaId, estadoCategoria.primeiraCategoriaId)
+                    navController.navigate(Rotas.novoProduto(categoriaSelecionadaId))
                 },
                 containerColor = CorLaranja,
                 contentColor = Color.Black,

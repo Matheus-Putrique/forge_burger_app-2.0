@@ -18,10 +18,6 @@ class CategoriaViewModel(
     val uiState: StateFlow<CategoriaUiState> = _uiState.asStateFlow()
 
     init {
-        observarCategoriasDoBanco()
-    }
-
-    private fun observarCategoriasDoBanco() {
         viewModelScope.launch {
             repository.carregarIniciaisSeVazio()
             repository.buscarTodos().collect { categorias ->
@@ -102,15 +98,33 @@ class CategoriaViewModel(
                 )
                 repository.inserir(novaCategoria)
             }
-            limparFormulario()
+            _uiState.update {
+                it.copy(
+                    nomeCampo = "",
+                    emojiCampo = "",
+                    descricaoCampo = "",
+                    estouEditando = false,
+                    categoriaEmEdicao = null
+                )
+            }
         }
     }
 
     fun removerCategoria(categoria: Categoria) {
         viewModelScope.launch {
             repository.deletar(categoria)
-            if (_uiState.value.categoriaEmEdicao?.id == categoria.id) {
-                limparFormulario()
+            _uiState.update { estado ->
+                if (estado.categoriaEmEdicao?.id != categoria.id) {
+                    estado
+                } else {
+                    estado.copy(
+                        nomeCampo = "",
+                        emojiCampo = "",
+                        descricaoCampo = "",
+                        estouEditando = false,
+                        categoriaEmEdicao = null
+                    )
+                }
             }
         }
     }

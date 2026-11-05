@@ -132,7 +132,7 @@ fun CategoriasScreen(
             }
 
             items(estadoCategoria.listaCategorias, key = { it.id }) { categoria ->
-                val quantidadeProdutos = estadoProduto.listaProdutos.count { it.categoriaId == categoria.id }
+                val quantidadeProdutos = estadoProduto.quantidadePorCategoria[categoria.id] ?: 0
 
                 CardCategoria(
                     categoria = categoria,

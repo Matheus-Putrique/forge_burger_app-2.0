@@ -97,13 +97,13 @@ fun CategoriaDetalhesScreen(
                     Spacer(Modifier.width(8.dp))
                     CardEstatistica(
                         "Preço médio",
-                        if (produtos.isEmpty()) "-" else formatarPreco(produtos.map { it.preco }.average()),
+                        estadoProduto.precoMedioCategoriaDetalhe?.let { formatarPreco(it) } ?: "-",
                         Modifier.weight(1f)
                     )
                     Spacer(Modifier.width(8.dp))
                     CardEstatistica(
                         "Mais barato",
-                        produtos.minOfOrNull { it.preco }?.let { formatarPreco(it) } ?: "-",
+                        estadoProduto.precoMinimoCategoriaDetalhe?.let { formatarPreco(it) } ?: "-",
                         Modifier.weight(1f)
                     )
                 }
@@ -147,8 +147,7 @@ fun CategoriaDetalhesScreen(
                     BotaoLaranja(
                         texto = "Novo produto",
                         onClick = {
-                            val primeiraCat = estadoCategoria.listaCategorias.firstOrNull()?.id
-                            produtoViewModel.prepararNovoProduto(catAtual.id, primeiraCat)
+                            produtoViewModel.prepararNovoProduto(catAtual.id, estadoCategoria.primeiraCategoriaId)
                             navController.navigate(Rotas.novoProduto(catAtual.id))
                         },
                         modifier = Modifier.fillMaxWidth()

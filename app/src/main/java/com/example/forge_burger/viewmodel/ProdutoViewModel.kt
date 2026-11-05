@@ -28,10 +28,6 @@ class ProdutoViewModel(
     )
 
     init {
-        observarProdutosDoBanco()
-    }
-
-    private fun observarProdutosDoBanco() {
         viewModelScope.launch {
             repository.carregarIniciaisSeVazio()
             repository.buscarTodos().collect { produtos ->
@@ -182,7 +178,27 @@ class ProdutoViewModel(
                 )
                 repository.inserir(novoProduto)
             }
-            limparEdicaoProduto()
+            _uiState.update {
+                it.copy(
+                    estouEditando = false,
+                    produtoEmEdicao = null,
+                    emojiCampo = "",
+                    nomeCampo = "",
+                    precoCampo = "",
+                    descricaoCampo = ""
+                )
+            }
+        }
+    }
+
+    fun alternarFavorito(produtoId: Int) {
+        _uiState.update { estado ->
+            val novaLista = if (estado.favoritos.contains(produtoId)) {
+                estado.favoritos - produtoId
+            } else {
+                estado.favoritos + produtoId
+            }
+            estado.copy(favoritos = novaLista)
         }
     }
 

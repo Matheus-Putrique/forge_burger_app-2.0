@@ -4,6 +4,11 @@ import androidx.room.Entity
 import androidx.room.PrimaryKey
 import com.example.forge_burger.R
 
+const val ID_CATEGORIA_LANCHES = 1
+
+private const val MINUTOS_BASE_PEDIDO = 25
+private const val MINUTOS_POR_ITEM = 3
+
 @Entity(tableName = "categorias")
 data class Categoria(
     @PrimaryKey(autoGenerate = true)
@@ -41,7 +46,7 @@ data class ItemCarrinho(
     val quantidade: Int
 ) {
     val precoUnitario: Double get() = produto.preco + adicionais.sumOf { it.preco }
-    val total: Double get() = precoUnitario * quantidade
+    val total: Double get() = (produto.preco + adicionais.sumOf { it.preco }) * quantidade
 
     val resumo: String
         get() = (listOf(pontoCarne) + adicionais.map { it.nome })
@@ -58,6 +63,9 @@ data class Pedido(
     val endereco: String
 ) {
     val total: Double get() = subtotal + taxaEntrega
+    val quantidadeItens: Int get() = itens.sumOf { it.quantidade }
+    val tempoEstimadoMinutos: Int
+        get() = MINUTOS_BASE_PEDIDO + itens.sumOf { it.quantidade } * MINUTOS_POR_ITEM
 }
 
 enum class Perfil(val rotulo: String) {
